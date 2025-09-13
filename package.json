@@ -1,0 +1,14 @@
+{
+  "name": "cs4241-final-project-a25-group1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gracm0/cs4241-final-project-a25-group1.git"
+  },
+  "private": true
+}
