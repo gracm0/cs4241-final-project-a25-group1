@@ -1,5 +1,4 @@
 # Proposal.md
-==============
 ## PhotoBucket
 ### Amanda Longo, Grace Mahoney, Nia Junod
 -------------------------------------------
@@ -8,3 +7,4 @@ We will build the **frontend** using React with Vite as the development and buil
 For the **backend**, we will use Node.js with Express to build a scalable server that can handle API requests efficiently. Additionally, we plan to integrate the Google API to support authentication and future extensibility. The application will be hosted on Render to ensure reliable performance. 
 We will be using Archivo & Roboto for our font, and we have inserted our color palette below  
 <img width="1600" height="1200" alt="photobucket" src="https://github.com/user-attachments/assets/d130cd01-4688-46d0-96df-ef4ac602b21b" />
+
