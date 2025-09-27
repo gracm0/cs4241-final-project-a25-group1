@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Roboto:wght@400;500;700&display=swap');
+
+:root{
+    --brand-ink:#302F4D; --brand-sun:#FFD639; --brand-blush:#FF99A7;
+    --brand-sky:#0092E0; --brand-leaf:#00AF54;
+}
+
+@layer base{
+    html,body,#root{height:100%}
+    body{@apply bg-white text-[var(--brand-ink)] font-body}
+    h1,h2,h3,h4{@apply font-heading text-[var(--brand-ink)]}
+}
+@layer components{
+    .btn{@apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-transform active:scale-[.98]}
+    .btn-sky{@apply bg-brand-sky text-white hover:brightness-110}
+    .photo-card{@apply rounded-2xl shadow-soft overflow-hidden border}
+    .hover-pop{@apply transition-transform duration-300 hover:scale-[1.06] hover:-rotate-2}
+    .highlight{@apply rounded-2xl px-2 -mx-2; background:linear-gradient(90deg,var(--brand-blush),var(--brand-sun))}
+}
