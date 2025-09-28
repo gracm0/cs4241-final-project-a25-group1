@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
 
+
 export default function App() {
     return (
         <Routes>
