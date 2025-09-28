@@ -96,7 +96,7 @@ export default function Home() {
                 <div style={{ textAlign: "center", maxWidth: "48rem", padding: "24px" }}>
                     {/* Logo badge */}
                     <span className="logo-badge glow">
-            <img src="/assets/Logo.png" alt="PhotoBucket" className="hero-logo" />
+            <img src="/assets/logo.png" alt="PhotoBucket" className="hero-logo" />
           </span>
 
                     <p className="brand-text" style={{ marginTop: 8, fontSize: 16 }}>
