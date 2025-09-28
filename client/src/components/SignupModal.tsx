@@ -19,7 +19,8 @@ export default function SignupModal({ open }: Props) {
 
     if (!open) return null;
 
-    const close = () => nav("/");
+    const close = () => nav("/"); // backdrop/✕ goes home
+    const goToApp = () => nav("/bucketlist"); // signup success → bucketlist
 
     return createPortal(
         <>
@@ -36,7 +37,7 @@ export default function SignupModal({ open }: Props) {
                 aria-hidden
             />
 
-            {/* Overlay that positions the card a bit above center */}
+            {/* Overlay */}
             <div
                 style={{
                     position: "fixed",
@@ -44,9 +45,9 @@ export default function SignupModal({ open }: Props) {
                     zIndex: 9999,
                     display: "flex",
                     justifyContent: "center",
-                    alignItems: "flex-start", // start from top
-                    paddingTop: "12vh", // lift the card above the vertical center
-                    pointerEvents: "none", // let the card handle clicks
+                    alignItems: "flex-start",
+                    paddingTop: "12vh",
+                    pointerEvents: "none",
                 }}
             >
                 <div
@@ -58,13 +59,13 @@ export default function SignupModal({ open }: Props) {
                         minHeight: "420px",
                         maxHeight: "90vh",
                         borderRadius: "28px",
-                        background: "#FAFAFA", // <-- soft white background
+                        background: "#FAFAFA",
                         boxShadow: "0 24px 80px rgba(0,0,0,.25)",
                         border: "1px solid rgba(0,0,0,.10)",
                         position: "relative",
                     }}
                 >
-                {/* Glow */}
+                    {/* Glow */}
                     <div
                         style={{
                             position: "absolute",
@@ -127,7 +128,7 @@ export default function SignupModal({ open }: Props) {
                         </p>
                     </div>
 
-                    {/* Form (centered within the card) */}
+                    {/* Form */}
                     <div
                         style={{
                             position: "absolute",
@@ -140,7 +141,6 @@ export default function SignupModal({ open }: Props) {
                             alignItems: "center",
                         }}
                     >
-                        {/* First + Last side by side */}
                         <div style={{ display: "flex", gap: "16px" }}>
                             <input
                                 placeholder="First"
@@ -174,7 +174,6 @@ export default function SignupModal({ open }: Props) {
                             />
                         </div>
 
-                        {/* Username */}
                         <input
                             placeholder="Create Username"
                             style={{
@@ -191,7 +190,6 @@ export default function SignupModal({ open }: Props) {
                             }}
                         />
 
-                        {/* Password */}
                         <input
                             type="password"
                             placeholder="Create Password"
@@ -220,12 +218,10 @@ export default function SignupModal({ open }: Props) {
                         }}
                     >
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={goToApp} // ← signup success
                             className="btn btn-sky rounded-full text-base font-medium"
-                            style={{
-                                padding: "10px 32px",
-                                fontSize: "16px",
-                            }}
+                            style={{ padding: "10px 32px", fontSize: "16px" }}
                         >
                             Sign Up
                         </button>

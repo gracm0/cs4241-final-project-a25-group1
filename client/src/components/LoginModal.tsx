@@ -12,16 +12,20 @@ export default function LoginModal({ open }: Props) {
         if (!open) return;
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        return () => (document.body.style.overflow = prev || "auto");
+        return () => {
+            document.body.style.overflow = prev || "auto"; // return void (TS-safe)
+        };
     }, [open]);
 
     if (!open) return null;
 
-    const close = () => nav("/");
+    const close = () => nav("/"); // backdrop/✕ goes home
+    const goToApp = () => nav("/bucketlist"); // login success → bucketlist
+
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: auth
-        close();
+        // TODO: handle real auth logic
+        goToApp();
     };
 
     return createPortal(
@@ -39,16 +43,16 @@ export default function LoginModal({ open }: Props) {
                 aria-hidden
             />
 
-            {/* Overlay centers the card */}
+            {/* Overlay matches SignUpModal positioning */}
             <div
                 style={{
                     position: "fixed",
                     inset: 0,
                     zIndex: 9999,
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
-                    padding: "4vh 16px",
+                    alignItems: "flex-start",
+                    paddingTop: "12vh",
                     pointerEvents: "none",
                 }}
             >
@@ -59,21 +63,30 @@ export default function LoginModal({ open }: Props) {
                     style={{
                         pointerEvents: "auto",
                         width: "min(92vw, 640px)",
-                        minHeight: 460,
+                        minHeight: "420px",
                         maxHeight: "90vh",
-                        borderRadius: 28,
-                        background:
-                            "linear-gradient(180deg, #fff, #ffe7eb 60%, #ffffff 100%)",
+                        borderRadius: "28px",
+                        background: "#FAFAFA",
                         boxShadow: "0 24px 80px rgba(0,0,0,.25)",
                         border: "1px solid rgba(0,0,0,.10)",
                         position: "relative",
-
-                        /* NEW: make the card a vertical flex container */
-                        display: "flex",
-                        flexDirection: "column",
-                        padding: 24,
+                        overflow: "hidden",
                     }}
                 >
+                    {/* Glow */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: "-2px",
+                            borderRadius: "30px",
+                            pointerEvents: "none",
+                            background:
+                                "linear-gradient(180deg,rgba(255,213,0,.45),rgba(255,153,167,.45),transparent)",
+                            filter: "blur(6px)",
+                            zIndex: 0,
+                        }}
+                    />
+
                     {/* Close */}
                     <button
                         onClick={close}
@@ -88,79 +101,111 @@ export default function LoginModal({ open }: Props) {
                             background: "rgba(255,255,255,.95)",
                             border: "1px solid rgba(0,0,0,.10)",
                             boxShadow: "0 4px 12px rgba(0,0,0,.12)",
+                            zIndex: 2,
                         }}
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "block", margin: "0 auto" }}>
-                            <path d="M6 6l12 12M18 6L6 18" stroke="#334155" strokeWidth="2" strokeLinecap="round" />
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            style={{ display: "block", margin: "0 auto" }}
+                        >
+                            <path
+                                d="M6 6l12 12M18 6L6 18"
+                                stroke="#334155"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            />
                         </svg>
                     </button>
 
-                    {/* Header */}
-                    <div style={{ textAlign: "center", paddingTop: 6 }}>
-                        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Welcome back!</h2>
-                        <p className="mt-2 text-sm text-slate-600 font-medium">Keep making memories!</p>
+                    {/* Title */}
+                    <div
+                        style={{
+                            textAlign: "center",
+                            paddingTop: "20px",
+                            position: "relative",
+                            zIndex: 1,
+                        }}
+                    >
+                        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight animate-fade-in">
+                            <span className="brand-text">Welcome back!</span>
+                        </h2>
+                        <p
+                            className="mt-2 text-sm text-slate-600 font-medium"
+                            style={{ fontFamily: "'Roboto', sans-serif" }}
+                        >
+                            Keep making memories!
+                        </p>
                     </div>
 
-                    {/* Body grows to take available space */}
-                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <form
-                            onSubmit={onSubmit}
+                    {/* Form */}
+                    <form
+                        onSubmit={onSubmit}
+                        style={{
+                            position: "absolute",
+                            top: "52%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "16px",
+                            alignItems: "center",
+                            zIndex: 1,
+                        }}
+                    >
+                        <input
+                            placeholder="Username"
                             style={{
-                                width: "100%",
-                                maxWidth: 520,
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 16,
+                                height: "56px",
+                                width: "320px",
+                                textAlign: "center",
+                                fontSize: "18px",
+                                borderRadius: "12px",
+                                backgroundColor: "#FDE68A",
+                                color: "#374151",
+                                padding: "0 20px",
+                                outline: "none",
+                                border: "none",
                             }}
+                        />
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            style={{
+                                height: "56px",
+                                width: "320px",
+                                textAlign: "center",
+                                fontSize: "18px",
+                                borderRadius: "12px",
+                                backgroundColor: "#FDE68A",
+                                color: "#374151",
+                                padding: "0 20px",
+                                outline: "none",
+                                border: "none",
+                            }}
+                        />
+                    </form>
+
+                    {/* Button at bottom center */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            bottom: "20px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: 1,
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={(e) => onSubmit(e as unknown as React.FormEvent)}
+                            className="btn btn-sky rounded-full text-base font-medium"
+                            style={{ padding: "10px 32px", fontSize: "16px" }}
                         >
-                            <label style={{ display: "block" }}>
-                                <span className="sr-only">Username</span>
-                                <input
-                                    placeholder="Username"
-                                    style={{
-                                        height: 56,
-                                        width: "100%",
-                                        fontSize: 18,
-                                        borderRadius: 16,
-                                        backgroundColor: "#FDE68A",
-                                        color: "#374151",
-                                        padding: "0 20px",
-                                        border: "none",
-                                        outline: "none",
-                                    }}
-                                />
-                            </label>
-
-                            <label style={{ display: "block" }}>
-                                <span className="sr-only">Password</span>
-                                <input
-                                    type="password"
-                                    placeholder="Password"
-                                    style={{
-                                        height: 56,
-                                        width: "100%",
-                                        fontSize: 18,
-                                        borderRadius: 16,
-                                        backgroundColor: "#FDE68A",
-                                        color: "#374151",
-                                        padding: "0 20px",
-                                        border: "none",
-                                        outline: "none",
-                                    }}
-                                />
-                            </label>
-
-                            {/* Footer: button centered at the bottom */}
-                            <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
-                                <button
-                                    type="submit"
-                                    className="btn btn-sky rounded-full text-base font-medium"
-                                    style={{ padding: "10px 32px", fontSize: 16 }}
-                                >
-                                    Login
-                                </button>
-                            </div>
-                        </form>
+                            Login
+                        </button>
                     </div>
                 </div>
             </div>
