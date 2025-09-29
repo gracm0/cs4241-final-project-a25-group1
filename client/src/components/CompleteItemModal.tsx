@@ -1,14 +1,15 @@
+// src/components/CompleteItemModal.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
  * CompleteItemModal
- * Opens when the user clicks the "dot" to complete a bucket item.
- * - Shows item title/desc (pass via props).
- * - Lets user set a "date completed".
- * - "Upload Image" triggers a native file picker.
- * - "Take A Picture" opens a camera modal (provided below).
- * - Returns the chosen image (file|blob) + date via onSubmit.
+ * Opens when the user clicks a dot to complete a bucket item.
+ * - Shows item title/desc/location (passed via props).
+ * - Lets user set "date completed".
+ * - "Upload Image" triggers native file picker.
+ * - "Take A Picture" opens camera capture modal.
+ * - Returns chosen image + date via onSubmit.
  */
 export type BucketItem = {
     id: string;
@@ -29,12 +30,6 @@ type Props = {
         photo?: File | Blob;    // from file picker or camera
         photoKind: "upload" | "camera" | null;
     }) => void;
-    // Optional: provide your own "Take Photo" UI; otherwise we render CameraModal below.
-    renderCamera?: (opts: {
-        open: boolean;
-        onClose: () => void;
-        onCapture: (blob: Blob) => void;
-    }) => React.ReactNode;
 };
 
 export default function CompleteItemModal({
@@ -42,7 +37,6 @@ export default function CompleteItemModal({
                                               item,
                                               onClose,
                                               onSubmit,
-                                              renderCamera,
                                           }: Props) {
     const [dateCompleted, setDateCompleted] = useState("");
     const [showCamera, setShowCamera] = useState(false);
@@ -55,11 +49,12 @@ export default function CompleteItemModal({
         if (!open) return;
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = prev || "auto"; };
+        return () => {
+            document.body.style.overflow = prev || "auto";
+        };
     }, [open]);
 
     useEffect(() => {
-        // Reset state when opening for a new item
         if (open) {
             setDateCompleted("");
             setPendingPhoto(undefined);
@@ -95,7 +90,6 @@ export default function CompleteItemModal({
         onClose();
     };
 
-    // lightweight styling (tweak as you like or move to CSS)
     const card: React.CSSProperties = {
         width: 460,
         maxWidth: "90vw",
@@ -139,7 +133,13 @@ export default function CompleteItemModal({
                         </div>
                     </div>
 
-                    <hr style={{ border: 0, borderTop: "2px solid #fad6d9", margin: "10px 0 16px" }} />
+                    <hr
+                        style={{
+                            border: 0,
+                            borderTop: "2px solid #fad6d9",
+                            margin: "10px 0 16px",
+                        }}
+                    />
 
                     <div style={{ marginBottom: 8 }}>
                         <div style={{ fontSize: 20, fontWeight: 800 }}>{item.title}</div>
@@ -149,7 +149,14 @@ export default function CompleteItemModal({
                     </div>
 
                     {(item.locationName || item.address1 || item.cityStateZip) && (
-                        <div style={{ fontSize: 12, color: "#666", marginBottom: 12, textAlign: "center" }}>
+                        <div
+                            style={{
+                                fontSize: 12,
+                                color: "#666",
+                                marginBottom: 12,
+                                textAlign: "center",
+                            }}
+                        >
                             {item.locationName && <div>{item.locationName}</div>}
                             {item.address1 && <div>{item.address1}</div>}
                             {item.cityStateZip && <div>{item.cityStateZip}</div>}
@@ -157,9 +164,17 @@ export default function CompleteItemModal({
                     )}
 
                     {/* Date completed */}
-                    <label style={{ fontSize: 11, color: "#7a7a7a" }}>date completed</label>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
-                        {/* You can swap to type="date" if you want native pickers */}
+                    <label style={{ fontSize: 11, color: "#7a7a7a" }}>
+                        date completed
+                    </label>
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "center",
+                            marginBottom: 16,
+                        }}
+                    >
                         <input
                             placeholder="MM/DD/YYYY"
                             value={dateCompleted}
@@ -174,7 +189,9 @@ export default function CompleteItemModal({
                                 fontWeight: 600,
                             }}
                         />
-                        <span role="img" aria-label="calendar">📅</span>
+                        <span role="img" aria-label="calendar">
+              📅
+            </span>
                     </div>
 
                     {/* Action buttons */}
@@ -210,8 +227,22 @@ export default function CompleteItemModal({
                     </div>
 
                     {/* Confirm / Cancel */}
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18 }}>
-                        <button onClick={onClose} style={{ background: "transparent", border: 0, fontWeight: 700, cursor: "pointer" }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginTop: 18,
+                        }}
+                    >
+                        <button
+                            onClick={onClose}
+                            style={{
+                                background: "transparent",
+                                border: 0,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                            }}
+                        >
                             Cancel
                         </button>
                         <button
@@ -232,7 +263,7 @@ export default function CompleteItemModal({
                         </button>
                     </div>
 
-                    {/* Hidden file input for Upload Image */}
+                    {/* Hidden file input */}
                     <input
                         ref={fileRef}
                         type="file"
@@ -243,32 +274,21 @@ export default function CompleteItemModal({
                 </div>
             </div>
 
-            {/* Camera modal (internal default) */}
-            {renderCamera
-                ? renderCamera({
-                    open: showCamera,
-                    onClose: () => setShowCamera(false),
-                    onCapture: (blob) => {
-                        setPendingPhoto(blob);
-                        setShowCamera(false);
-                    },
-                })
-                : (
-                    <CameraModal
-                        open={showCamera}
-                        onClose={() => setShowCamera(false)}
-                        onCapture={(blob) => {
-                            setPendingPhoto(blob);
-                            setShowCamera(false);
-                        }}
-                    />
-                )}
+            {/* Camera modal */}
+            <CameraModal
+                open={showCamera}
+                onClose={() => setShowCamera(false)}
+                onCapture={(blob) => {
+                    setPendingPhoto(blob);
+                    setShowCamera(false);
+                }}
+            />
         </>,
         document.body
     );
 }
 
-/** -------- Default CameraModal (used if you don't pass renderCamera) -------- */
+/* ---------------- Camera Modal ---------------- */
 function CameraModal({
                          open,
                          onClose,
@@ -283,19 +303,17 @@ function CameraModal({
 
     useEffect(() => {
         if (!open) return;
-
         let cancelled = false;
 
         (async () => {
             try {
-                // Try rear camera first on mobile; fallback to any camera.
                 const constraints: MediaStreamConstraints = {
                     video: { facingMode: { ideal: "environment" } },
                     audio: false,
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 if (cancelled) {
-                    stream.getTracks().forEach(t => t.stop());
+                    stream.getTracks().forEach((t) => t.stop());
                     return;
                 }
                 streamRef.current = stream;
@@ -305,14 +323,16 @@ function CameraModal({
                 }
             } catch (err) {
                 console.error("Camera error:", err);
-                alert("Could not access camera. Please allow camera permissions or upload an image instead.");
+                alert(
+                    "Could not access camera. Please allow camera permissions or upload instead."
+                );
                 onClose();
             }
         })();
 
         return () => {
             cancelled = true;
-            streamRef.current?.getTracks().forEach(t => t.stop());
+            streamRef.current?.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
         };
     }, [open, onClose]);
@@ -328,7 +348,9 @@ function CameraModal({
         canvas.height = h;
         const ctx = canvas.getContext("2d")!;
         ctx.drawImage(video, 0, 0, w, h);
-        const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+        const blob = await new Promise<Blob>((res) =>
+            canvas.toBlob((b) => res(b!), "image/jpeg", 0.92)
+        );
         onCapture(blob);
     };
 
@@ -368,11 +390,38 @@ function CameraModal({
                         playsInline
                         style={{ width: "100%", display: "block", background: "#000" }}
                     />
-                    <div style={{ display: "flex", gap: 12, justifyContent: "space-between", padding: 12 }}>
-                        <button onClick={onClose} style={{ border: 0, background: "#fff", borderRadius: 8, padding: "10px 16px", fontWeight: 700, cursor: "pointer" }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 12,
+                            justifyContent: "space-between",
+                            padding: 12,
+                        }}
+                    >
+                        <button
+                            onClick={onClose}
+                            style={{
+                                border: 0,
+                                background: "#fff",
+                                borderRadius: 8,
+                                padding: "10px 16px",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                            }}
+                        >
                             Cancel
                         </button>
-                        <button onClick={snap} style={{ border: 0, background: "#7ED957", borderRadius: 999, padding: "10px 18px", fontWeight: 800, cursor: "pointer" }}>
+                        <button
+                            onClick={snap}
+                            style={{
+                                border: 0,
+                                background: "#7ED957",
+                                borderRadius: 999,
+                                padding: "10px 18px",
+                                fontWeight: 800,
+                                cursor: "pointer",
+                            }}
+                        >
                             Capture
                         </button>
                     </div>

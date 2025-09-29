@@ -95,11 +95,32 @@ export default function Home() {
             >
                 <div style={{ textAlign: "center", maxWidth: "48rem", padding: "24px" }}>
                     {/* Logo badge */}
-                    <span className="logo-badge glow">
-            <img src="/assets/logo.png" alt="PhotoBucket" className="hero-logo" />
-          </span>
+                    <span
+                        className="logo-badge glow"
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "pink",
+                            padding: "6px",       // tighter pink background
+                            borderRadius: "12px", // softer corners
+                        }}
+                    >
+                        <img
+                            src="/assets/logo.png"
+                            alt="PhotoBucket"
+                            className="hero-logo"
+                            style={{
+                                width: "80px",   // logo stands out more
+                                height: "auto",
+                            }}
+                        />
+                    </span>
 
-                    <p className="brand-text" style={{ marginTop: 8, fontSize: 16 }}>
+                    <p
+                        className="brand-text"
+                        style={{ marginTop: 10, fontSize: 18, fontWeight: 600 }}
+                    >
                         PhotoBucket
                     </p>
 
@@ -116,9 +137,9 @@ export default function Home() {
                     </h1>
 
                     <HeroHighlight className="mt-3">
-            <span className="highlight-pill">
-              <span className="highlight-sheen">A Photo Finish.</span>
-            </span>
+                        <span className="highlight-pill">
+                            <span className="highlight-sheen">A Photo Finish.</span>
+                        </span>
                     </HeroHighlight>
 
                     <p className="tagline" style={{ marginTop: 16 }}>

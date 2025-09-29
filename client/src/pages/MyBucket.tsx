@@ -10,7 +10,8 @@ import CompleteItemModal from "../components/CompleteItemModal";
  * Includes a "share/collaborate" (+) button near the header.
  * - Up to 4 collaborators MAX (including the owner).
  * - Invite modal lets you copy a link and add collaborators by name.
- * - NEW: Right-side dot opens a Complete Item modal (upload image / take picture).
+ * - NEW: Left "Complete" pill (replaces old left dot) opens the Complete modal.
+ * - The Priority colored dot on the right also opens the modal.
  */
 export default function MyBucket() {
     const nav = useNavigate();
@@ -26,13 +27,13 @@ export default function MyBucket() {
         return Math.min(Math.max(n, 1), 4);
     }, [id, q]);
 
-    // TODO: replace with real auth user (for now matches your hardcode idea)
-    const userName = "Amanda"; // "Grace", "Nia", etc. when you hardcode login mapping.
+    // TODO: replace with real auth user
+    const userName = "Amanda";
 
     /* ------------------- Collaborators ------------------- */
     type Collab = { id: string; name: string; color: string };
     const INITIAL_COLLABS: Collab[] = [
-        { id: "me", name: userName, color: "#ff6b6b" }, // owner always present
+        { id: "me", name: userName, color: "#ff6b6b" },
     ];
 
     const [collabs, setCollabs] = useState<Collab[]>(INITIAL_COLLABS);
@@ -44,9 +45,7 @@ export default function MyBucket() {
         const name = raw.trim();
         if (!name) return;
         if (!canAddMore) return;
-        // Avoid duplicates by name
-        if (collabs.some((c) => c.name.toLowerCase() === name.toLowerCase()))
-            return;
+        if (collabs.some((c) => c.name.toLowerCase() === name.toLowerCase())) return;
 
         const palette = [
             "#2ecc71",
@@ -68,7 +67,6 @@ export default function MyBucket() {
     };
 
     const removeCollaborator = (id: string) => {
-        // Don't allow removing the owner
         if (id === "me") return;
         setCollabs((cs) => cs.filter((c) => c.id !== id));
     };
@@ -95,7 +93,7 @@ export default function MyBucket() {
             desc: "Pick a pumpkin and take photos!",
             location: "Tougas Family Farm, 234 Ball St, Northborough, MA 01532",
             priority: "high",
-            done: false,
+            done: true,
         },
         {
             id: "i2",
@@ -123,7 +121,6 @@ export default function MyBucket() {
     const openBucket = (n: number) => nav(`/bucket/${n}`);
 
     /* ------------------- Complete Item Modal wiring ------------------- */
-    // Local type (aligned with CompleteItemModal props)
     type ModalItem = {
         id: string;
         title: string;
@@ -136,8 +133,6 @@ export default function MyBucket() {
     const [completeItem, setCompleteItem] = useState<ModalItem | null>(null);
 
     const openCompleteFor = (it: BucketItem) => {
-        // Map your item fields to the modal fields
-        // (we’ll put desc under subtitle and location in locationName)
         setCompleteItem({
             id: it.id,
             title: it.title,
@@ -152,23 +147,9 @@ export default function MyBucket() {
         photo?: File | Blob;
         photoKind: "upload" | "camera" | null;
     }) => {
-        // Example: mark as done locally and (optionally) upload the photo
         setItems((xs) =>
             xs.map((x) => (x.id === args.itemId ? { ...x, done: true } : x))
         );
-
-        // If you have an API, you can send:
-        // const form = new FormData();
-        // form.append("itemId", args.itemId);
-        // if (args.dateCompleted) form.append("dateCompleted", args.dateCompleted);
-        // if (args.photo) {
-        //   form.append(
-        //     "photo",
-        //     args.photo,
-        //     args.photo instanceof File ? args.photo.name : "camera.jpg"
-        //   );
-        // }
-        // await fetch("/api/bucket/complete", { method: "POST", body: form });
         console.log("Completed:", args);
     };
 
@@ -216,7 +197,6 @@ export default function MyBucket() {
                 })}
 
                 <div style={{ flex: 1 }} />
-                {/* IconBtn needs styles — pass S.iconBtn + S.plusBtn */}
                 <IconBtn style={{ ...S.iconBtn, ...S.plusBtn }} title="Add bucket">
                     ＋
                 </IconBtn>
@@ -243,9 +223,7 @@ export default function MyBucket() {
                 >
                     <h1 style={S.h1}>{userName}'s Bucket</h1>
 
-                    {/* Right-side: share (+) and the tiny logo */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        {/* Share (+) */}
                         <button
                             style={S.shareBtn}
                             title="Invite collaborators (max 4)"
@@ -292,37 +270,10 @@ export default function MyBucket() {
                             item={it}
                             onDelete={() => deleteItem(it.id)}
                             onToggle={() => toggleDone(it.id)}
-                            onOpenComplete={() => openCompleteFor(it)} // ← NEW
+                            onOpenComplete={() => openCompleteFor(it)}
                         />
                     ))}
-
-                    {/* 🔥 TEMP TEST BUTTON to open CompleteItemModal manually */}
-                    <button
-                        style={{
-                            marginTop: 20,
-                            padding: "10px 16px",
-                            borderRadius: 8,
-                            border: "none",
-                            background: "#10b981",
-                            color: "#fff",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                        }}
-                        onClick={() =>
-                            setCompleteItem({
-                                id: "test",
-                                title: "Test Bucket Item",
-                                subtitle: "Just checking the modal opens",
-                                locationName: "Testville",
-                            })
-                        }
-                    >
-                        Open CompleteItemModal (test)
-                    </button>
                 </div>
-
-
-
 
                 {/* Floating add button (add list item) */}
                 <button style={S.fab} title="Add item">
@@ -339,11 +290,9 @@ export default function MyBucket() {
                             Invite collaborators
                         </h3>
                         <p style={{ margin: "0 0 14px", fontSize: 13, opacity: 0.75 }}>
-                            Share this link or add people by name. Max 4 total (including
-                            you).
+                            Share this link or add people by name. Max 4 total (including you).
                         </p>
 
-                        {/* Copy link */}
                         <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
                             <input value={inviteUrl} readOnly style={S.input} />
                             <button
@@ -356,13 +305,11 @@ export default function MyBucket() {
                             </button>
                         </div>
 
-                        {/* Add by name */}
                         <InviteForm
                             disabled={!canAddMore}
                             onAdd={(name) => addCollaborator(name)}
                         />
 
-                        {/* Current list */}
                         <div
                             style={{
                                 marginTop: 12,
@@ -422,7 +369,7 @@ export default function MyBucket() {
                 </>
             )}
 
-            {/* NEW: Complete Item modal */}
+            {/* Complete Item modal */}
             <CompleteItemModal
                 open={!!completeItem}
                 item={completeItem}
@@ -439,7 +386,7 @@ function BucketCard({
                         item,
                         onDelete,
                         onToggle,
-                        onOpenComplete, // ← NEW
+                        onOpenComplete, // opens CompleteItemModal
                     }: {
     item: BucketItem;
     onDelete: () => void;
@@ -451,24 +398,17 @@ function BucketCard({
 
     return (
         <section style={{ ...S.card, background: tint }}>
-            {/* left: toggle + text */}
+            {/* LEFT: Complete pill (replaces the old round dot) + text */}
             <div style={S.cardLeft}>
                 <button
-                    aria-label="Mark complete (quick toggle)"
-                    onClick={onToggle}
-                    style={{ ...S.toggle, opacity: item.done ? 0.5 : 1 }}
+                    aria-label={item.done ? "Completed" : "Complete with photo"}
+                    onClick={onOpenComplete}
+                    style={item.done ? S.completedPill : S.completePillLeft}
+                    title={item.done ? "Completed" : "Complete with photo"}
                 >
-          <span
-              style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  background: item.done ? "#10b981" : "#fff",
-                  display: "block",
-                  border: "2px solid rgba(0,0,0,.25)",
-              }}
-          />
+                    {item.done ? "Completed" : "Complete"}
                 </button>
+
                 <div>
                     <div
                         style={{
@@ -482,7 +422,7 @@ function BucketCard({
                 </div>
             </div>
 
-            {/* right: meta + right-side "complete" dot + delete */}
+            {/* RIGHT: meta + delete */}
             <div style={S.cardRight}>
                 <div style={S.metaStack}>
                     {item.location && (
@@ -493,29 +433,24 @@ function BucketCard({
                     )}
                     <div style={S.metaRow}>
                         <span style={S.metaLabel}>Priority:</span>
-                        <span
-                            title={item.priority}
+                        {/* Priority colored dot is clickable to open modal too */}
+                        <button
+                            onClick={onOpenComplete}
+                            title="Complete with photo"
+                            aria-label="Complete with photo"
                             style={{
-                                width: 12,
-                                height: 12,
+                                width: 14,
+                                height: 14,
                                 borderRadius: "50%",
+                                border: "none",
                                 background: dot,
                                 display: "inline-block",
+                                cursor: "pointer",
+                                boxShadow: "inset 0 0 0 2px rgba(0,0,0,.08)",
                             }}
                         />
                     </div>
                 </div>
-
-                {/* NEW: the right-side "dot" that opens the big completion modal */}
-                <button
-                    aria-label="Open complete modal"
-                    onClick={onOpenComplete}
-                    style={S.completeDot}
-                    title="Complete with photo"
-                >
-                    {/* empty inner circle for visual */}
-                    <span style={S.completeDotInner} />
-                </button>
 
                 <button onClick={onDelete} title="Delete" style={S.closeBtn}>
                     ✕
@@ -682,7 +617,6 @@ const S: Record<string, React.CSSProperties> = {
         cursor: "pointer",
     },
 
-    /* NEW: shared icon button styling for IconBtn */
     iconBtn: {
         width: 48,
         height: 48,
@@ -734,17 +668,6 @@ const S: Record<string, React.CSSProperties> = {
         boxShadow: "0 10px 26px rgba(0,0,0,.08)",
     },
     cardLeft: { display: "flex", gap: 14, alignItems: "center" },
-    toggle: {
-        width: 28,
-        height: 28,
-        borderRadius: "50%",
-        background: "#fff",
-        border: "none",
-        display: "grid",
-        placeItems: "center",
-        cursor: "pointer",
-        boxShadow: "inset 0 0 0 2px rgba(0,0,0,.15)",
-    },
     cardTitle: { fontSize: 20, fontWeight: 800, lineHeight: 1.2 },
     cardDesc: { fontSize: 12.5, marginTop: 4, opacity: 0.9, maxWidth: 520 },
 
@@ -759,23 +682,30 @@ const S: Record<string, React.CSSProperties> = {
     metaLabel: { fontSize: 12, color: "#111", opacity: 0.7, minWidth: 60 },
     metaText: { fontSize: 11.5, color: "#111", opacity: 0.9 },
 
-    // NEW: right-side completion dot button
-    completeDot: {
-        width: 28,
-        height: 28,
-        borderRadius: "50%",
-        border: "3px solid #ffd27a",
-        background: "#fff",
+    // LEFT Complete pill styles
+    completePillLeft: {
+        height: 34,
+        padding: "0 12px",
+        borderRadius: 999,
+        border: "none",
+        background: "#ff4f9a",
+        color: "#fff",
+        fontWeight: 800,
         cursor: "pointer",
-        display: "grid",
-        placeItems: "center",
+        boxShadow: "0 6px 16px rgba(255,79,154,.35)",
+        marginRight: 12,
     },
-    completeDotInner: {
-        width: 12,
-        height: 12,
-        borderRadius: "50%",
-        background: "#ffffff",
-        boxShadow: "inset 0 0 0 2px rgba(0,0,0,.15)",
+    completedPill: {
+        height: 34,
+        padding: "0 12px",
+        borderRadius: 999,
+        border: "none",
+        background: "#22c55e",
+        color: "#fff",
+        fontWeight: 800,
+        cursor: "default",
+        opacity: 0.85,
+        marginRight: 12,
     },
 
     closeBtn: {

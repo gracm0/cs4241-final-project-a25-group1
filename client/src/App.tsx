@@ -2,8 +2,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
-import BucketList from "./components/Bucketlist"; // ← ensure file name is BucketList.tsx
-import MyBucket from "./pages/MyBucket";          // ← personal bucket page
+import BucketList from "./components/Bucketlist";
+import MyBucket from "./pages/MyBucket";
 
 export default function App() {
     return (
@@ -11,10 +11,10 @@ export default function App() {
             {/* Marketing / landing */}
             <Route path="/" element={<Home />} />
 
-            {/* Build page (shows Home with login/signup modals via query params) */}
+            {/* Build page */}
             <Route path="/build" element={<Build />} />
 
-            {/* Post-login dashboard (new-user bucket list starter) */}
+            {/* Post-login dashboard */}
             <Route path="/bucketlist" element={<BucketList />} />
 
             {/* A user's specific bucket (1..4) */}
@@ -28,4 +28,5 @@ export default function App() {
         </Routes>
     );
 }
+
 
