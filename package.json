@@ -10,5 +10,8 @@
     "type": "git",
     "url": "https://github.com/gracm0/cs4241-final-project-a25-group1.git"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "react-icons": "^5.5.0"
+  }
 }
