@@ -1,6 +1,7 @@
 // src/components/BucketList.tsx
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import IconBtn from "./IconBtn";
 
 /**
  * BucketList (post-login landing)
@@ -42,8 +43,7 @@ export default function BucketList() {
     const deleteItem = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
     const editItem = (id: string, patch: Partial<Item>) =>
         setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    const toggleDone = (id: string) =>
-        editItem(id, { done: !items.find((x) => x.id === id)?.done });
+    const toggleDone = (id: string) => editItem(id, { done: !items.find((x) => x.id === id)?.done });
 
     const openBucket = (n: number) => {
         setActiveBucket(n);
@@ -88,10 +88,11 @@ export default function BucketList() {
                 })}
 
                 <div style={{ flex: 1 }} />
-                <IconBtn style={S.plusBtn} title="Add bucket">＋</IconBtn>
+                {/* use imported IconBtn and pass styles */}
+                <IconBtn style={{ ...S.iconBtn, ...S.plusBtn }} title="Add bucket">＋</IconBtn>
                 <div style={{ flex: 1 }} />
-                <IconBtn title="Collaborators">👥</IconBtn>
-                <IconBtn style={{ fontWeight: 700, background: "transparent" }} title="Profile">
+                <IconBtn title="Collaborators" style={S.iconBtn}>👥</IconBtn>
+                <IconBtn title="Profile" style={{ ...S.iconBtn, fontWeight: 700, background: "transparent" }}>
                     A
                 </IconBtn>
             </aside>
@@ -174,10 +175,7 @@ export default function BucketList() {
                                                     style={{
                                                         ...S.priorityDot,
                                                         backgroundColor: opt.color,
-                                                        border:
-                                                            it.priority === opt.key
-                                                                ? "3px solid #1f2937"
-                                                                : "2px solid #d1d5db",
+                                                        border: it.priority === opt.key ? "3px solid #1f2937" : "2px solid #d1d5db",
                                                     }}
                                                 />
                                             ))}
@@ -199,18 +197,6 @@ export default function BucketList() {
 }
 
 /* ---------- small helpers ---------- */
-function IconBtn({
-                     children,
-                     style,
-                     title,
-                 }: React.PropsWithChildren<{ style?: React.CSSProperties; title?: string }>) {
-    return (
-        <button style={{ ...S.iconBtn, ...style }} type="button" title={title}>
-            {children}
-        </button>
-    );
-}
-
 function Avatar({
                     children,
                     bg,
