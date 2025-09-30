@@ -30,3 +30,4 @@ Think of 1, 3, and 4 in particular in a similar vein to the design / technical a
 
 ## References
 https://www.geeksforgeeks.org/node-js/how-to-store-images-in-mongodb-using-nodejs/ (image upload to mongodb)
+https://www.slingacademy.com/article/how-to-auto-hash-passwords-in-mongoose/ (authentication)

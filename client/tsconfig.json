@@ -9,6 +9,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "types": ["node"],
 
     // 👇 this is the key line
     "jsx": "react-jsx",
