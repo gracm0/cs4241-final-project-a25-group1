@@ -1,11 +1,24 @@
 import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import routes from './routes';
 import connectDB from './db';
-import User from './models/User';
 
-connectDB();
+const app = express();
 
-const newUser = new User({
-    email: 'gymahoney@wpi.edu',
-    password: 'password123',
-});
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+app.use('/api', routes); // all API routes prefixed with /api
+
+async function startServer() {
+  try {
+    await connectDB();
+    app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+  } catch (err) {
+    console.error('Failed to start server', err);
+  }
+}
+
+startServer();
