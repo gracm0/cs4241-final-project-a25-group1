@@ -12,7 +12,25 @@ Your project should consist of a complete Web application, exhibiting facets of 
 - A video (less than five minutes) where each group member explains some aspect of the project. An easy way to produce this video is for you all the groups members to join a Zoom call that is recorded; each member can share their screen when they discuss the project or one member can "drive" the interface while other members narrate (this second option will probably work better.) Upload the video to Canvas. (Further instructions are available in the Canvas assignment.) Make sure your video is less than five minutes but long enough to successfully explain your project and show it in action. There is no minimum video length.
 
 ## Instructions
-<!--2. Any additional instructions that might be needed to fully use your project (login information, etc.)-->
+
+**for groupmates:**
+
+to run locally on the frontend
+1. cd apps
+2. cd frontend
+3. npm install 
+4. npm run dev
+
+make sure you have everything installed on the backend
+1. cd apps
+2. cd backend
+3. npm install
+
+for good measure
+1. cd apps
+2. npm install
+
+if you have any questions/errors, pls ask amanda!! thank youuu
 
 ## Technologies
 <!--3. An outline of the technologies you used and how you used them.-->
