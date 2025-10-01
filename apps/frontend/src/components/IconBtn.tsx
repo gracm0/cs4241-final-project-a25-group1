@@ -2,9 +2,9 @@
 import React from "react";
 
 type Props = React.PropsWithChildren<{
-    title?: string;
-    style?: React.CSSProperties;
-    onClick?: React.ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
+  title?: string;
+  style?: React.CSSProperties;
+  onClick?: React.ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
 }>;
 
 /**
@@ -12,14 +12,9 @@ type Props = React.PropsWithChildren<{
  * Styling still comes from the page's `S.iconBtn` via inline `style` prop.
  */
 export default function IconBtn({ children, title, style, onClick }: Props) {
-    return (
-        <button
-            type="button"
-            title={title}
-            onClick={onClick}
-            style={style}
-        >
-            {children}
-        </button>
-    );
+  return (
+    <button type="button" title={title} onClick={onClick} style={style}>
+      {children}
+    </button>
+  );
 }
