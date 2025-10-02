@@ -1,179 +1,133 @@
 import { Link } from "react-router-dom";
-import HeroHighlight from "../components/HeroHighlight";
-import amanda from "../assets/Amanda1.JPG";
-import amanda2 from "../assets/Amanda2.JPG";
-import grace1 from "../assets/Grace1.png";
-import grace2 from "../assets/Grace2.jpg";
-import nia1 from "../assets/Nia1.jpg";
-import nia2 from "../assets/Nia2.JPEG";
-import logo from "../assets/logo.png";
+("use client");
+import { motion } from "motion/react";
+import { HeroHighlight, Highlight } from "../components/HeroHighlight";
+import garden from "../assets/garden.jpg";
+import amandaramen from "../assets/amandaramen.jpg";
+import llama from "../assets/llama.png";
+import beer from "../assets/beer.jpg";
+import niacool from "../assets/niacool.jpg";
+import elephant from "../assets/elephant.jpg";
+import biglogo from "../assets/biglogo.png";
+import { HoverBorderGradient } from "../components/hovergradientbutton";
 
 export default function Home() {
   return (
-    <main
-      className="bg-hero"
-      style={{ minHeight: "100vh", position: "relative" }}
-    >
-      {/* Floating photos (fixed positions) */}
+    <main className="bg-hero min-h-100vh relative">
       <img
-        src={amanda}
-        alt=""
-        aria-hidden
-        className="photo-card float-slow"
-        style={{
-          position: "fixed",
-          top: "12%",
-          left: "12%",
-          transform: "rotate(-6deg)",
-        }}
+        src={biglogo}
+        alt="PhotoBucket Logo"
+        className="absolute top-4 left-4 w-[64px] h-auto z-50"
       />
-      <img
-        src={grace1}
-        alt=""
-        aria-hidden
-        className="photo-card float-fast"
-        style={{
-          position: "fixed",
-          top: "22%",
-          left: "18%",
-          transform: "rotate(-3deg)",
-          zIndex: 10,
-        }}
-      />
-      <img
-        src={amanda2}
-        alt=""
-        aria-hidden
-        className="photo-card float-med"
-        style={{
-          position: "fixed",
-          top: "18%",
-          right: "16%",
-          transform: "rotate(6deg)",
-        }}
-      />
-      <img
-        src={nia2}
-        alt=""
-        aria-hidden
-        className="photo-card float-slow"
-        style={{
-          position: "fixed",
-          bottom: "12%",
-          left: "14%",
-          transform: "rotate(-3deg)",
-        }}
-      />
-      <img
-        src={grace2}
-        alt=""
-        aria-hidden
-        className="photo-card float-med"
-        style={{
-          position: "fixed",
-          bottom: "22%",
-          right: "18%",
-          transform: "rotate(3deg)",
-        }}
-      />
-      <img
-        src={nia1}
-        alt=""
-        aria-hidden
-        className="photo-card float-fast"
-        style={{
-          position: "fixed",
-          bottom: "10%",
-          right: "10%",
-          transform: "rotate(2deg)",
-          zIndex: 10,
-        }}
-      />
+      <div>
+        {/* Images */}
+        <img
+          src={garden}
+          aria-hidden
+          className="object-cover w-[175px] h-[175px] fixed top-[20%] left-[6%] rotate-[-8deg] rounded-2xl"
+        />
+        <img
+          src={llama}
+          aria-hidden
+          className="object-cover w-[175px] h-[175px] fixed top-[7%] left-[17%] rotate-[6deg] rounded-2xl"
+        />
+        <img
+          src={amandaramen}
+          aria-hidden
+          className="object-cover w-[175px] h-[175px] fixed top-[12%] right-[10%] rotate-[8deg] rounded-2xl"
+        />
+        <img
+          src={elephant}
+          aria-hidden
+          className="object-cover w-[175px] h-[175px] fixed bottom-[12%] left-[12%] rotate-[-6deg] rounded-2xl"
+        />
+        <img
+          src={beer}
+          aria-hidden
+          className="object-cover w-[175px] h-[175px] fixed bottom-[20%] right-[16%] rotate-[4deg] rounded-2xl"
+        />
+        <img
+          src={niacool}
+          aria-hidden
+          className="object-cover w-[175px] h-[175px] fixed bottom-[5%] right-[5%] rotate-[-4deg] rounded-2xl"
+        />
 
-      {/* Centered hero stack */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          display: "grid",
-          placeItems: "center",
-          zIndex: 50,
-        }}
-      >
-        <div
-          style={{ textAlign: "center", maxWidth: "48rem", padding: "24px" }}
-        >
-          {/* Logo badge */}
-          <span
-            className="logo-badge glow"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "pink",
-              padding: "6px", // tighter pink background
-              borderRadius: "12px", // softer corners
-            }}
-          >
-            <img
-              src={logo}
-              alt="PhotoBucket"
-              className="hero-logo"
-              style={{
-                width: "80px", // logo stands out more
-                height: "auto",
-              }}
-            />
-          </span>
-
-          <p
-            className="brand-text"
-            style={{ marginTop: 10, fontSize: 18, fontWeight: 600 }}
-          >
-            PhotoBucket
-          </p>
-
-          <h1
-            className="text-brand-ink"
-            style={{
-              marginTop: 12,
-              fontWeight: 900,
-              lineHeight: 1.1,
-              fontSize: "clamp(32px, 5vw, 56px)",
-            }}
-          >
-            Every Bucket Deserves
-          </h1>
-
-          <HeroHighlight className="mt-3">
-            <span className="highlight-pill">
-              <span className="highlight-sheen">A Photo Finish.</span>
+        {/* Centered hero stack */}
+        <div className="fixed inset-0 grid place-items-center" />
+        {/* Middle hero */}
+        <div className="fixed inset-0 grid place-items-center z-50">
+          <div style={{ textAlign: "center" }}>
+            {/* Logo */}
+            <span className="logo-badge inline-flex items-center background-[#FF99A7] border-radius-[16px]">
+              <img
+                src={biglogo}
+                alt="PhotoBucket"
+                className="hero-logo w-[80px] h-auto"
+              />
             </span>
-          </HeroHighlight>
+            <p className="text-[#302F4D] mt-1 text-[20px] font-medium">
+              PhotoBucket
+            </p>
 
-          <p className="tagline" style={{ marginTop: 16 }}>
-            Start making memories today.
-          </p>
+            <HeroHighlight>
+              <motion.h1
+                initial={{
+                  opacity: 0,
+                  y: 20,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: [20, -5, 0],
+                }}
+                transition={{
+                  duration: 0.5,
+                  ease: [0.4, 0.0, 0.2, 1],
+                }}
+                className="mt-5 mb-5 text-[73px] font-bold text-[#302F4D] max-w-4xl leading-relaxed lg:leading-snug text-center mx-auto"
+              >
+                Every Bucket Deserves{" "}
+                <span className="block">
+                  <Highlight className="text-[#302F4D]">
+                    A Photo Finish.
+                  </Highlight>
+                </span>
+              </motion.h1>
+            </HeroHighlight>
 
-          {/* Buttons */}
-          <div
-            style={{
-              marginTop: 24,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            {/* Open Signup Modal */}
-            <Link to="/build?signup=1" className="btn btn-sky">
-              Build A Bucket
-            </Link>
+            <p className="text-[#302F4D] text-md font-medium text-[24px]">
+              Start making memories today.
+            </p>
 
-            {/* Open Login Modal */}
-            <Link to="/build?login=1" className="btn btn-outline rounded-full">
-              Login
-            </Link>
+            {/* Buttons */}
+            <div
+              style={{
+                marginTop: 24,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              {/* Open Signup Modal */}
+              <div className="flex justify-center text-center">
+                <HoverBorderGradient
+                  as={Link}
+                  to="/build?signup=1"
+                  containerClassName="rounded-full"
+                  className="flex items-center space-x-2"
+                >
+                  Build A Bucket
+                </HoverBorderGradient>
+              </div>
+
+              {/* Open Login Modal */}
+              <Link
+                to="/build?login=1"
+                className="btn text-sm text-[#302F4D] hover:underline"
+              >
+                Login
+              </Link>
+            </div>
           </div>
         </div>
       </div>
