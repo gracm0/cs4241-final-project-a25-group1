@@ -1,74 +1,103 @@
+"use client";
+
 import React from "react";
+import { cn } from "../lib/utils";
+import { motion, useMotionTemplate, useMotionValue } from "motion/react";
 
-/**
- * HeroHighlight (Aceternity-style)
- * - Soft radial spotlight that follows the mouse
- * - Subtle fade-in on mount
- * - Wrap any headline/slogan inside this
- *
- * Usage:
- *   <HeroHighlight className="mt-3">
- *     <span className="highlight-pill">
- *       <span className="highlight-sheen">A Photo Finish.</span>
- *     </span>
- *   </HeroHighlight>
- */
-export default function HeroHighlight({
+type HeroHighlightProps = {
+  children: React.ReactNode;
+  className?: string;
+  containerClassName?: string;
+  radius?: number;
+};
+
+export const HeroHighlight: React.FC<HeroHighlightProps> = ({
   children,
-  className = "",
-}: React.PropsWithChildren<{ className?: string }>) {
-  const ref = React.useRef<HTMLDivElement>(null);
+  className,
+  containerClassName,
+  radius = 200,
+}) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+  function handleMouseMove({
+    currentTarget,
+    clientX,
+    clientY,
+  }: React.MouseEvent<HTMLDivElement>) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
 
-    const onMove = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      el.style.setProperty("--hx", `${x}px`);
-      el.style.setProperty("--hy", `${y}px`);
-    };
-
-    const center = () => {
-      const rect = el.getBoundingClientRect();
-      el.style.setProperty("--hx", `${rect.width / 2}px`);
-      el.style.setProperty("--hy", `${rect.height / 2}px`);
-    };
-
-    center();
-    window.addEventListener("resize", center);
-    el.addEventListener("mousemove", onMove);
-    return () => {
-      window.removeEventListener("resize", center);
-      el.removeEventListener("mousemove", onMove);
-    };
-  }, []);
+  const mask = useMotionTemplate`
+    radial-gradient(
+      ${radius}px circle at ${mouseX}px ${mouseY}px,
+      black 0%,
+      transparent 100%
+    )
+  `;
 
   return (
     <div
-      ref={ref}
-      className={`relative isolate overflow-visible animate-hero-fade-in ${className}`}
-      style={
-        {
-          ["--hx" as any]: "50%",
-          ["--hy" as any]: "50%",
-        } as React.CSSProperties
-      }
+      onMouseMove={handleMouseMove}
+      className={cn(
+        "group relative flex w-full items-center justify-center",
+        containerClassName
+      )}
     >
-      {/* Spotlight layer */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-20"
+      <motion.div
+        className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 dark:hidden"
         style={{
-          background:
-            "radial-gradient(320px 320px at var(--hx) var(--hy), rgba(125,211,252,0.28), rgba(167,139,250,0.2), rgba(251,146,60,0.10), transparent 70%)",
-          filter: "blur(18px)",
-          transition: "background-position 120ms linear",
+          WebkitMaskImage: mask,
+          maskImage: mask,
         }}
       />
-      <div className="relative z-10">{children}</div>
+
+      <motion.div
+        className="pointer-events-none absolute inset-0 hidden opacity-0 transition duration-300 group-hover:opacity-100 dark:block"
+        style={{
+          WebkitMaskImage: mask,
+          maskImage: mask,
+        }}
+      />
+
+      <div className={cn("relative z-20", className)}>{children}</div>
     </div>
   );
-}
+};
+
+type HighlightProps = {
+  children: React.ReactNode;
+  className?: string;
+  noBackground?: boolean;
+};
+
+export const Highlight: React.FC<HighlightProps> = ({
+  children,
+  className,
+  noBackground = false,
+}) => {
+  return (
+    <motion.span
+      initial={{ backgroundSize: "0% 100%" }}
+      animate={{ backgroundSize: "100% 100%" }}
+      transition={{ duration: 2, ease: "linear", delay: 0.5 }}
+      style={{
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "left center",
+        display: "inline",
+      }}
+      className={cn(
+        noBackground
+          ? "relative inline-block"
+          : "relative inline-block bg-gradient-to-r from-[#FFD639] to-[#FF99A7] px-6 pb-2 pt-2 rounded-2xl",
+        className
+      )}
+    >
+      {children}
+    </motion.span>
+  );
+};
+
+export default HeroHighlight;

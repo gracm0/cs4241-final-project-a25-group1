@@ -7,12 +7,12 @@
 
 @layer base {
   body {
-    @apply font-body text-brand-ink bg-white;
+    @apply font-body;
   }
   h1,
   h2,
   h3 {
-    font-family: "Archivo Black", system-ui, sans-serif;
+    font-family: "Roboto", system-ui, sans-serif;
   }
 }
 
@@ -25,229 +25,35 @@
     display: inline-flex;
   }
 
-  /* Solid BIG blue pill CTA — now Roboto Medium */
+  /* Solid big blue pill CTA — now Roboto Medium */
   .btn-sky {
-    background-color: #0ea5e9; /* sky-500 */
+    background-color: #0092E0; 
     color: #ffffff;
     font-family: "Roboto", system-ui, sans-serif;
-    font-weight: 500; /* Roboto Medium */
-    border-radius: 9999px; /* pill */
-    font-size: 1.25rem; /* ~text-xl */
-    padding: 1rem 2.5rem; /* py-4 px-10 */
-    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35);
-    transition: background-color 0.2s ease, transform 0.15s ease;
-  }
-  .btn-sky:hover {
-    background-color: #0284c7;
-  } /* sky-600 */
-  .btn-sky:active {
-    transform: scale(0.97);
-  }
-
-  /* Outline secondary button */
-  .btn-outline {
-    background-color: #ffffff;
-    color: #0ea5e9;
-    border: 1px solid #0ea5e9;
-    font-family: "Roboto", system-ui, sans-serif;
     font-weight: 500;
-    padding: 0.5rem 0.9rem;
-  }
-  .btn-outline:hover {
-    background-color: rgba(14, 165, 233, 0.06);
-  }
-
-  /* Optional: plain text link style */
-  .btn-link {
-    color: #0ea5e9;
-    text-decoration: underline;
-    background: transparent;
-    display: inline;
-    font-family: "Roboto", system-ui, sans-serif;
-    font-weight: 500;
+    border-radius: 9999px; 
+    font-size: 1rem;
+    padding: .75rem 2rem; 
   }
 
   .logo-badge {
-    @apply inline-flex items-center justify-center rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,.12)];
-    width: 140px;
-    height: 140px;
+    @apply inline-flex items-center justify-center rounded-2xl;
+    width: 60px;
+    height: 60px;
     background: #ff99a7;
-    border: 6px solid #ffd639;
   }
 
-  /* Logo fills the badge */
+  @screen md {
+    .logo-badge {
+      width: 90px;
+      height: 90px;
+    }
+  }
+
   .hero-logo {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important; /* or "cover" if you want it cropped edge-to-edge */
-    padding: 8px; /* optional: gives a little breathing room inside border */
-  }
-
-  .glow {
-    box-shadow: 0 12px 36px rgba(255, 153, 167, 0.35),
-      0 8px 24px rgba(0, 0, 0, 0.12);
-  }
-
-  .highlight-pill {
-    background: linear-gradient(90deg, #ff99a7, #ffd639, #7dd3fc, #a78bfa);
-    background-size: 300% 300%;
-    border-radius: 999px;
-    display: inline-block;
-    padding: 0.5rem 0.9rem;
-    margin-inline: -0.25rem;
-    animation: hueflow 6s ease-in-out infinite;
-  }
-
-  /* A Photo Finish — Roboto Bold, large size */
-  .highlight-sheen {
-    position: relative;
-    display: inline-block;
-    color: #0b1020;
-    font-family: "Roboto", system-ui, sans-serif;
-    font-weight: 700; /* Bold */
-    font-size: clamp(32px, 5vw, 56px); /* same as Every Bucket Deserves */
-    line-height: 1.1;
-  }
-  .highlight-sheen::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 999px;
-    pointer-events: none;
-    background: linear-gradient(
-      120deg,
-      transparent,
-      rgba(255, 255, 255, 0.35),
-      transparent
-    );
-    transform: translateX(-120%);
-    animation: sheen 2.8s ease-in-out infinite 0.6s;
-  }
-
-  .photo-card {
-    width: 176px;
-    height: 132px;
-    border-radius: 20px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
-    object-fit: cover;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
-    background: #f3f4f6;
-  }
-  .photo-card:hover {
-    transform: translateY(-6px) scale(1.06);
-    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
-    filter: saturate(1.15) contrast(1.05);
-  }
-
-  @keyframes floaty {
-    0% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-6px);
-    }
-    100% {
-      transform: translateY(0);
-    }
-  }
-  .float-slow {
-    animation: floaty 6s ease-in-out infinite;
-  }
-  .float-med {
-    animation: floaty 5s ease-in-out infinite;
-  }
-  .float-fast {
-    animation: floaty 4s ease-in-out infinite;
-  }
-
-  @keyframes fadeUp {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-  .animate-fadeUp {
-    animation: fadeUp 0.6s ease-out both;
-  }
-
-  .bg-hero {
-    background: radial-gradient(
-        1200px 600px at 10% 0%,
-        #e0f2fe55,
-        transparent 60%
-      ),
-      radial-gradient(900px 500px at 95% 10%, #fde68a55, transparent 60%),
-      radial-gradient(800px 600px at 20% 100%, #fbcfe855, transparent 60%),
-      white;
-  }
-
-  .brand-text {
-    font-weight: 800;
-    letter-spacing: 0.2px;
-    background: linear-gradient(
-      90deg,
-      #7dd3fc,
-      #a78bfa,
-      #f472b6,
-      #fb7185,
-      #facc15,
-      #34d399
-    );
-    background-size: 300% 300%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: hueflow 8s ease-in-out infinite;
-  }
-
-  /* Tagline: Roboto at 20px */
-  .tagline {
-    font-family: "Roboto", system-ui, sans-serif;
-    font-size: 20px;
-    font-weight: 400;
-    color: #302f4d;
-  }
-
-  @keyframes hueflow {
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
-  @keyframes sheen {
-    0% {
-      transform: translateX(-120%);
-    }
-    60% {
-      transform: translateX(120%);
-    }
-    100% {
-      transform: translateX(120%);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .brand-text,
-    .highlight-pill {
-      animation: none;
-    }
-    .highlight-sheen::after {
-      display: none;
-    }
-  }
-
-  /* default tiny logo (overridden inline in Home.tsx) */
-  .hero-logo {
-    width: 32px !important;
-    height: 32px !important;
-    object-fit: contain !important;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    padding: 4px;
   }
 }

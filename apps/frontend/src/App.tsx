@@ -2,9 +2,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
-import BucketList from "./pages/Bucketlist"; // ✅ fixed capitalization
+import BucketList from "./pages/Bucketlist";
 import MyBucket from "./pages/MyBucket";
-import BucketGallery from "./pages/BucketGallery"; // ✅ new import
+import BucketGallery from "./pages/BucketGallery";
 
 export default function App() {
   return (
@@ -19,7 +19,6 @@ export default function App() {
       <Route path="/bucket/:id" element={<MyBucket />} />
       {/* Bucket Gallery */}
       <Route path="/bucket-gallery" element={<BucketGallery />} />{" "}
-      {/* ✅ new route */}
       {/* Optional alias */}
       <Route path="/app" element={<Navigate to="/build" replace />} />
       {/* Catch-all */}
