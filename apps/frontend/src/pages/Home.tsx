@@ -9,7 +9,7 @@ import beer from "../assets/beer.jpg";
 import niacool from "../assets/niacool.jpg";
 import elephant from "../assets/elephant.jpg";
 import biglogo from "../assets/biglogo.png";
-import { HoverBorderGradient } from "../components/hovergradientbutton";
+import { HoverBorderGradient } from "../components/HoverGradientButton";
 
 export default function Home() {
   return (
