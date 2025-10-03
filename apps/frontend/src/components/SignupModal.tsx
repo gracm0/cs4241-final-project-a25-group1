@@ -38,7 +38,7 @@ export default function SignupModal({ open }: Props) {
         body: JSON.stringify({
           first,
           last,
-          email: username,
+          username,
           password,
         }),
       });

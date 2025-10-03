@@ -4,9 +4,9 @@ import { register, login } from "./service/auth";
 const router = Router();
 
 router.post("/api/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   try {
-    const user = await register(email, password);
+    const user = await register(username, password);
     res.status(201).json({ message: "Signup successful", user });
   } catch (err) {
     const message =
@@ -16,9 +16,9 @@ router.post("/api/signup", async (req, res) => {
 });
 
 router.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   try {
-    const user = await login(email, password);
+    const user = await login(username, password);
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
