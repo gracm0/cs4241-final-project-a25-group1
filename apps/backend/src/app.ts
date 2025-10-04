@@ -16,7 +16,7 @@ app.use('/api', routes); // all API routes prefixed with /api
 async function startServer() {
   try {
     await connectDB();
-    app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+    app.listen(5000, () => console.log('Server running on http://localhost:5000'));
   } catch (err) {
     console.error('Failed to start server', err);
   }

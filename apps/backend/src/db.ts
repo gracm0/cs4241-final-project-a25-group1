@@ -23,12 +23,12 @@ async function connectDB() {
 export default connectDB;
 
 // TEMP TEST
-connectDB()
-  .then(() => {
-    console.log("DB connection test completed. Exiting...");
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+// connectDB()
+//   .then(() => {
+//     console.log("DB connection test completed. Exiting...");
+//     process.exit(0);
+//   })
+//   .catch((err) => {
+//     console.error(err);
+//     process.exit(1);
+//   });

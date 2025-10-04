@@ -5,7 +5,7 @@ export async function register(username: string, password: string) {
   const existing: UserDocument | null = await User.findOne({ username });
   if (existing) throw new Error('User already exists');
 
-  const newUser = new User({ username, password }); // TS now infers correct type
+  const newUser = new User({ username, password }); 
   await newUser.save();
   return newUser;
 }
