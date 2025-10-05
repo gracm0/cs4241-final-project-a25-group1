@@ -1,302 +1,630 @@
-// src/pages/BucketGallery.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import biglogo from "../assets/biglogo.png";
+import gallerylogo from "../assets/bucketlisticon.png";
 
+/* ---------- types ---------- */
 type Photo = {
-  id: string;
-  title: string;
-  desc?: string;
-  date: string; // ISO yyyy-mm-dd
-  src: string;  // data URL (persisted)
-  createdAt: string; // ISO
+    id: string;
+    title: string;
+    desc?: string;
+    date: string;       // YYYY-MM-DD (completion date)
+    src: string;        // image URL or DataURL
+    createdAt: string;  // ISO
+    extra?: Record<string, string | number | boolean | null>;
 };
 
-const LS_KEY = (listId: string) => `gallery:${listId}`;
+const PRESET_COUNT = 12;
+const LS_KEY = "gallery:all";
 
-export default function BucketGallery() {
-  const { listId } = useParams(); // /lists/:listId/gallery
-  const activeListId = listId ?? "demo";
+/* ---------- helpers ---------- */
+function stripKnownKeys(row: any) {
+    const omit = new Set([
+        "id",
+        "_id",
+        "title",
+        "description",
+        "desc",
+        "completedDate",
+        "date",
+        "createdAt",
+        "updatedAt",
+        "imageUrl",
+        "src",
+        "__v",
+    ]);
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(row ?? {})) if (!omit.has(k)) out[k] = v;
+    return out;
+}
 
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState<Photo | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+function formatKey(k: string) {
+    return k
+        .replace(/[_\-]+/g, " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/\b\w/g, (s) => s.toUpperCase());
+}
 
-  // Load from localStorage on mount / list change
-  useEffect(() => {
-    const raw = localStorage.getItem(LS_KEY(activeListId));
-    if (raw) {
-      try {
-        const parsed: Photo[] = JSON.parse(raw);
-        setPhotos(parsed);
-        return;
-      } catch {}
-    }
-    // seed demo data (once) if empty
-    if (!raw && activeListId === "demo") {
-      const demo: Photo[] = [
-        mkPhoto("Pumpkin Patch", "Picked pumpkins!", "2025-09-01"),
-        mkPhoto("Wedding Crash", "At the beach wedding", "2025-09-10"),
-        mkPhoto("Volleyball", "Learned to serve", "2025-09-20"),
-      ];
-      setPhotos(demo);
-      localStorage.setItem(LS_KEY(activeListId), JSON.stringify(demo));
-    } else {
-      setPhotos([]);
-    }
-  }, [activeListId]);
-
-  // Save to localStorage whenever photos change
-  useEffect(() => {
-    localStorage.setItem(LS_KEY(activeListId), JSON.stringify(photos));
-  }, [photos, activeListId]);
-
-  // Sort (newest first) + filter
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const sorted = [...photos].sort(
-        (a, b) => Date.parse(b.date || b.createdAt) - Date.parse(a.date || a.createdAt)
-    );
-    if (!q) return sorted;
-    return sorted.filter((p) =>
-        [p.title, p.desc].filter(Boolean).join(" ").toLowerCase().includes(q)
-    );
-  }, [photos, query]);
-
-  // Keyboard nav for lightbox
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (!active) return;
-      if (e.key === "Escape") setActive(null);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [active]);
-
-  async function onUploadFormSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const fd = new FormData(form);
-    const file = fd.get("file") as File | null;
-    const title = (fd.get("title") as string) || "Untitled";
-    const desc = (fd.get("desc") as string) || "";
-    const date = (fd.get("date") as string) || new Date().toISOString().slice(0, 10);
-
-    if (!file) return;
-
-    const dataUrl = await fileToDataURL(file);
-    const newPhoto: Photo = {
-      id: crypto.randomUUID(),
-      title,
-      desc,
-      date,
-      src: dataUrl,
-      createdAt: new Date().toISOString(),
+function mkPhoto(title: string, desc: string, dateISO: string): Photo {
+    const pinkTile =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+            "<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><rect width='100%' height='100%' rx='36' ry='36' fill='#ffd6e1'/></svg>"
+        );
+    return {
+        id: (crypto?.randomUUID?.() ??
+            `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+        title,
+        desc,
+        date: dateISO,
+        src: pinkTile,
+        createdAt: new Date().toISOString(),
     };
-    setPhotos((prev) => [newPhoto, ...prev]);
+}
 
-    form.reset();
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
+/* ---------- component ---------- */
+export default function BucketGallery() {
+    const nav = useNavigate();
 
-  function onDelete(id: string) {
-    if (!confirm("Delete this photo?")) return;
-    setPhotos((prev) => prev.filter((p) => p.id !== id));
-    if (active?.id === id) setActive(null);
-  }
+    /* profile / auth */
+    const userName =
+        localStorage.getItem("username") ||
+        sessionStorage.getItem("username") ||
+        "User";
+    const [showProfile, setShowProfile] = useState(false);
+    const profileRef = useRef<HTMLDivElement | null>(null);
 
-  return (
-      <div style={S.page}>
-        <header style={S.header}>
-          <div>
-            <h1 style={S.h1}>
-              Bucket Gallery {listId ? <span style={S.subtle}>· list {listId}</span> : null}
-            </h1>
-            <p style={S.muted}>Front-end only • localStorage • uploads persist as Data URLs</p>
-          </div>
-          <div style={S.tools}>
-            <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search photos…"
-                style={S.search}
-            />
-          </div>
-        </header>
+    useEffect(() => {
+        function onDocClick(e: MouseEvent) {
+            if (!profileRef.current) return;
+            if (!profileRef.current.contains(e.target as Node)) setShowProfile(false);
+        }
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") setShowProfile(false);
+        }
+        document.addEventListener("mousedown", onDocClick);
+        window.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDocClick);
+            window.removeEventListener("keydown", onKey);
+        };
+    }, []);
 
-        {/* Upload card (front-end only) */}
-        <form onSubmit={onUploadFormSubmit} style={S.uploadCard}>
-          <div style={S.uploadTitle}>Add a photo</div>
-          <div style={S.uploadGrid}>
-            <input
-                ref={fileInputRef}
-                name="file"
-                type="file"
-                accept="image/*"
-                required
-                style={S.input}
-            />
-            <input name="title" placeholder="Title" required style={S.input} />
-            <input name="desc" placeholder="Description (optional)" style={S.input} />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label style={S.label}>Completed</label>
-              <input name="date" type="date" style={S.input} />
-            </div>
-            <button style={S.btn}>Upload</button>
-          </div>
-        </form>
+    function handleLogout() {
+        try {
+            localStorage.removeItem("username");
+            localStorage.removeItem("token");
+            sessionStorage.removeItem("username");
+            sessionStorage.removeItem("token");
+        } catch {}
+        fetch("/logout", { method: "POST", credentials: "include" }).catch(() => {});
+        nav("/");
+    }
 
-        {/* Grid */}
-        <div className="gallery-grid" style={S.grid}>
-          {filtered.map((p) => (
-              <div key={p.id} className="card" style={S.card} aria-label={`${p.title}, ${p.date}`}>
-                {/* Image */}
+    /* data */
+    const [photos, setPhotos] = useState<Photo[]>([]);
+    const [query, setQuery] = useState("");
+    const [active, setActive] = useState<Photo | null>(null);
+
+    // Load from backend (all-buckets) with localStorage fallback/seed
+    useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            try {
+                const res = await fetch(`/api/gallery`, {
+                    headers: { Accept: "application/json" },
+                    credentials: "include",
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const rows = (await res.json()) as Array<any>;
+                const mapped: Photo[] = rows.map((r) => ({
+                    id: String(r.id ?? r._id ?? crypto.randomUUID()),
+                    title: r.title ?? "Untitled",
+                    desc: r.description ?? r.desc ?? "",
+                    date: (r.completedDate || r.date || r.createdAt || new Date().toISOString()).slice(0, 10),
+                    src: r.imageUrl || r.src || "",
+                    createdAt: r.createdAt ?? new Date().toISOString(),
+                    extra: stripKnownKeys(r),
+                }));
+                if (!cancelled) {
+                    setPhotos(mapped);
+                    localStorage.setItem(LS_KEY, JSON.stringify(mapped));
+                }
+            } catch {
+                const raw = localStorage.getItem(LS_KEY);
+                if (raw) {
+                    if (!cancelled) setPhotos(JSON.parse(raw));
+                } else {
+                    // Demo seed once if completely empty
+                    const demo: Photo[] = [
+                        mkPhoto("Pumpkin Patch", "Picked pumpkins!", "2025-09-01"),
+                        mkPhoto("Wedding Crash", "Beach wedding", "2025-09-10"),
+                        mkPhoto("Volleyball", "Learned to serve", "2025-09-20"),
+                        mkPhoto("Hike Day", "Blue trail", "2025-09-25"),
+                        mkPhoto("Cafe Date", "Best latte", "2025-09-27"),
+                        mkPhoto("Museum", "Modern art wing", "2025-09-30"),
+                        mkPhoto("Road Trip", "Sunset pull-off", "2025-10-01"),
+                        mkPhoto("Game Night", "Catan sweep", "2025-10-02"),
+                    ];
+                    if (!cancelled) setPhotos(demo);
+                    localStorage.setItem(LS_KEY, JSON.stringify(demo));
+                }
+            }
+        }
+        load();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // Persist local edits (e.g., deletes)
+    useEffect(() => {
+        try {
+            localStorage.setItem(LS_KEY, JSON.stringify(photos));
+        } catch {}
+    }, [photos]);
+
+    // Optional: live sync when BucketList writes to localStorage while Gallery is open
+    useEffect(() => {
+        function onStorage(e: StorageEvent) {
+            if (e.key === LS_KEY && e.newValue) {
+                try {
+                    const next = JSON.parse(e.newValue) as Photo[];
+                    setPhotos(next);
+                } catch {}
+            }
+        }
+        window.addEventListener("storage", onStorage);
+        return () => window.removeEventListener("storage", onStorage);
+    }, []);
+
+    // Filter + sort
+    const filtered = useMemo(() => {
+        const qv = query.trim().toLowerCase();
+        const sorted = [...photos].sort(
+            (a, b) =>
+                Date.parse(b.date || b.createdAt) - Date.parse(a.date || a.createdAt)
+        );
+        if (!qv) return sorted;
+        return sorted.filter((p) =>
+            [p.title, p.desc, ...(p.extra ? Object.values(p.extra) : [])]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+                .includes(qv)
+        );
+    }, [photos, query]);
+
+    // Build fixed tiles
+    const tiles: (Photo | null)[] = useMemo(() => {
+        const used = filtered.slice(0, PRESET_COUNT);
+        const placeholdersNeeded = Math.max(0, PRESET_COUNT - used.length);
+        return [...used, ...Array(placeholdersNeeded).fill(null)];
+    }, [filtered]);
+
+    // Esc to close lightbox
+    useEffect(() => {
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") {
+                setActive(null);
+            }
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []);
+
+    function onDelete(id: string) {
+        if (!confirm("Delete this photo?")) return;
+        setPhotos((prev) => prev.filter((p) => p.id !== id));
+        if (active?.id === id) setActive(null);
+    }
+
+    /* nav helpers */
+    const openBucketList = (n: number) => nav(`/bucket/${n}`);
+
+    /* ---------- render ---------- */
+    return (
+        <div style={S.app}>
+            {/* Sidebar (shared look with BucketList) */}
+            <aside style={S.sidebar}>
                 <img
-                    src={p.src}
-                    alt={p.title}
-                    style={S.img}
-                    onClick={() => setActive(p)}
+                    src={biglogo}
+                    alt="Photobucket logo"
+                    style={{
+                        width: 50,
+                        height: 50,
+                        marginBottom: 20,
+                        borderRadius: 14,
+                        boxShadow: "0 6px 18px rgba(0,0,0,.08)",
+                    }}
                 />
 
-                {/* Hover overlay */}
-                <div className="overlay" style={S.overlay}>
-                  <div style={{ textAlign: "center" }}>
-                    <strong style={{ display: "block", fontSize: 16 }}>{p.title}</strong>
-                    {p.desc ? <p style={{ fontSize: 13, margin: "6px 0" }}>{p.desc}</p> : null}
-                    <small style={{ opacity: 0.9 }}>
-                      {new Date(p.date || p.createdAt).toLocaleDateString()}
-                    </small>
-                  </div>
+                {/* Bucket buttons jump back to their list pages */}
+                {Array.from({ length: 4 }).map((_, i) => {
+                    const n = i + 1;
+                    return (
+                        <button
+                            key={n}
+                            onClick={() => openBucketList(n)}
+                            title={`Open Bucket ${n}`}
+                            style={S.bucketBtn}
+                        >
+                            <img
+                                src={gallerylogo}
+                                alt={`Bucket ${n}`}
+                                style={{
+                                    ...S.bucketIcon,
+                                    filter:
+                                        "drop-shadow(0 6px 12px rgba(0,0,0,.08))",
+                                }}
+                            />
+                        </button>
+                    );
+                })}
 
-                  {/* delete button (top-right) */}
-                  <button type="button" onClick={() => onDelete(p.id)} style={S.deleteBtn} title="Delete">
-                    ✕
-                  </button>
-                </div>
-              </div>
-          ))}
-        </div>
+                <div style={{ flex: 1 }} />
 
-        {/* Lightbox */}
-        {active && (
-            <div style={S.lbBackdrop} onClick={() => setActive(null)}>
-              <div style={S.lbInner} onClick={(e) => e.stopPropagation()}>
-                <img src={active.src} alt={active.title} style={S.lbImg} />
-                <div style={S.lbCaption}>
-                  <div style={{ fontWeight: 600 }}>{active.title}</div>
-                  {active.desc ? <div style={{ opacity: 0.85 }}>{active.desc}</div> : null}
-                  <div style={{ opacity: 0.7, fontSize: 12, marginTop: 4 }}>
-                    {new Date(active.date || active.createdAt).toLocaleString()}
-                  </div>
-                </div>
-                <button type="button" onClick={() => setActive(null)} style={S.lbClose} title="Close">
-                  ✕
+                {/* You are on the Gallery already; show a static icon */}
+                <button
+                    title="All Buckets Gallery"
+                    aria-label="All Buckets Gallery"
+                    style={S.iconBtn}
+                >
+                    🖼️
                 </button>
-              </div>
-            </div>
-        )}
 
-        {/* Hover CSS */}
-        <style>{`
-        .overlay { opacity: 0; transition: opacity .25s ease; }
-        .card:hover .overlay, .card:focus-within .overlay { opacity: 1; }
-      `}</style>
-      </div>
-  );
+                <div style={{ height: 12 }} />
+
+                {/* Placeholder for 'add bucket' */}
+                <button style={{ ...S.iconBtn, ...S.plusBtn }} title="Add bucket">
+                    ＋
+                </button>
+
+                <div style={{ flex: 1 }} />
+
+                {/* Profile + logout */}
+                <div ref={profileRef} style={{ position: "relative" }}>
+                    <button
+                        onClick={() => setShowProfile((s) => !s)}
+                        title="Profile"
+                        style={{ ...S.iconBtn, fontWeight: 700, background: "transparent" }}
+                        aria-haspopup="menu"
+                        aria-expanded={showProfile ? true : false}
+                    >
+                        {userName.charAt(0).toUpperCase()}
+                    </button>
+                    {showProfile && (
+                        <div style={S.profileMenu} role="menu">
+                            <div style={S.profileName}>{userName}</div>
+                            <button type="button" onClick={handleLogout} style={S.logoutBtn}>
+                                Log Out
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </aside>
+
+            {/* Main */}
+            <main style={S.main}>
+                <header style={S.header}>
+                    <div>
+                        <h1 style={S.h1}>Bucket Gallery (All Buckets)</h1>
+                        <p style={S.muted}>
+                            Sorted by completion date • hover tiles for details
+                        </p>
+                    </div>
+                    <div style={S.tools}>
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search photos…"
+                            style={S.search}
+                            aria-label="Search photos"
+                        />
+                    </div>
+                </header>
+
+                {/* Fixed 12-square grid */}
+                <div className="gallery-grid" style={S.grid}>
+                    {tiles.map((p, i) =>
+                        p ? (
+                            <div
+                                key={p.id}
+                                className="card"
+                                style={S.card}
+                                aria-label={`${p.title}, ${p.date}`}
+                            >
+                                <img
+                                    src={p.src}
+                                    alt={p.title}
+                                    style={S.img}
+                                    onClick={() => setActive(p)}
+                                    loading="lazy"
+                                />
+                                <div className="overlay" style={S.overlay}>
+                                    <div style={S.metaWrap}>
+                                        <strong style={{ display: "block", fontSize: 16 }}>
+                                            {p.title}
+                                        </strong>
+                                        {p.desc ? (
+                                            <div style={{ fontSize: 13, margin: "6px 0" }}>
+                                                {p.desc}
+                                            </div>
+                                        ) : null}
+                                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 6 }}>
+                                            Completed:{" "}
+                                            {new Date(p.date || p.createdAt).toLocaleDateString()}
+                                        </div>
+                                        {p.extra && (
+                                            <dl style={S.metaList}>
+                                                {Object.entries(p.extra).map(([k, v]) => (
+                                                    <div key={k} style={S.metaRow}>
+                                                        <dt style={S.metaKey}>{formatKey(k)}</dt>
+                                                        <dd style={S.metaVal}>{String(v)}</dd>
+                                                    </div>
+                                                ))}
+                                            </dl>
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => onDelete(p.id)}
+                                        style={S.deleteBtn}
+                                        title="Delete"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div key={`ph-${i}`} style={S.placeholder} aria-hidden />
+                        )
+                    )}
+                </div>
+            </main>
+
+            {/* Lightbox */}
+            {active && (
+                <div style={S.lbBackdrop} onClick={() => setActive(null)}>
+                    <div style={S.lbInner} onClick={(e) => e.stopPropagation()}>
+                        <img src={active.src} alt={active.title} style={S.lbImg} />
+                        <div style={S.lbCaption}>
+                            <div style={{ fontWeight: 600 }}>{active.title}</div>
+                            {active.desc ? (
+                                <div style={{ opacity: 0.85 }}>{active.desc}</div>
+                            ) : null}
+                            <div style={{ opacity: 0.7, fontSize: 12, marginTop: 4 }}>
+                                {new Date(active.date || active.createdAt).toLocaleString()}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setActive(null)}
+                            style={S.lbClose}
+                            title="Close"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Hover CSS */}
+            <style>
+                {`.overlay { opacity: 0; transition: opacity .22s ease; }
+          .card:hover .overlay, .card:focus-within .overlay { opacity: 1; }`}
+            </style>
+        </div>
+    );
 }
 
-/* Helpers */
-function mkPhoto(title: string, desc: string, dateISO: string): Photo {
-  // tiny 1x1 data URL placeholder (pink) so the layout looks consistent in demo
-  const pinkDot =
-      "data:image/svg+xml;utf8," +
-      encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='100%' height='100%' fill='#fbb6ce'/></svg>`);
-  return {
-    id: crypto.randomUUID(),
-    title,
-    desc,
-    date: dateISO,
-    src: pinkDot,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-function fileToDataURL(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res(String(reader.result));
-    reader.onerror = (e) => rej(e);
-    reader.readAsDataURL(file);
-  });
-}
-
-/* Styles */
+/* ---------- styles (matching BucketList look) ---------- */
 const S: Record<string, React.CSSProperties> = {
-  page: { padding: "42px 48px" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 },
-  h1: { fontSize: 42, marginBottom: 4 },
-  subtle: { fontSize: 18, color: "#888", marginLeft: 8 },
-  muted: { color: "#666", fontSize: 13 },
-  tools: { display: "flex", gap: 8, alignItems: "center" },
-  search: {
-    borderRadius: 12, border: "1px solid #ddd", padding: "8px 12px", outline: "none", minWidth: 240,
-  },
+    app: {
+        display: "flex",
+        minHeight: "100vh",
+        background: "#f6f7fb",
+        color: "#1f2430",
+        fontFamily:
+            'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
+    },
 
-  uploadCard: {
-    border: "1px solid #eee",
-    borderRadius: 16,
-    padding: 16,
-    margin: "12px 0 20px",
-    background: "#fff",
-    boxShadow: "0 6px 18px rgba(0,0,0,.04)",
-  },
-  uploadTitle: { fontWeight: 600, marginBottom: 10 },
-  uploadGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "center" },
-  input: {
-    borderRadius: 12, border: "1px solid #e5e5e5", padding: "8px 10px", outline: "none",
-    background: "#fafafa",
-  },
-  label: { fontSize: 12, color: "#666" },
-  btn: {
-    gridColumn: "1 / -1",
-    borderRadius: 12, border: "1px solid #111", background: "#111", color: "#fff", padding: "8px 12px",
-    cursor: "pointer",
-  },
+    /* sidebar */
+    sidebar: {
+        width: 76,
+        padding: "14px 10px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 14,
+        background: "linear-gradient(180deg,#ffd19e,#febad6)",
+        borderRight: "1px solid #ffd6b7",
+        borderTopRightRadius: 22,
+        borderBottomRightRadius: 22,
+    },
+    bucketBtn: {
+        background: "transparent",
+        border: "none",
+        padding: 0,
+        marginBottom: 14,
+        cursor: "pointer",
+    },
+    bucketIcon: { width: 42, height: 42 },
+    iconBtn: {
+        width: 48,
+        height: 48,
+        border: "none",
+        borderRadius: 14,
+        cursor: "pointer",
+        background: "#fff",
+        fontSize: 24,
+        display: "grid",
+        placeItems: "center",
+        boxShadow: "0 6px 18px rgba(0,0,0,.08)",
+    },
+    plusBtn: {
+        background: "#ff4f9a",
+        color: "#fff",
+        fontSize: 30,
+        boxShadow: "0 10px 22px rgba(255,79,154,.35)",
+    },
 
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-    gap: 20,
-  },
-  card: {
-    position: "relative",
-    borderRadius: 16,
-    overflow: "hidden",
-    height: 180,
-    background: "#ffe0ea",
-    boxShadow: "0 6px 18px rgba(0,0,0,.08)",
-    cursor: "pointer",
-  },
-  img: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
-  overlay: {
-    position: "absolute", inset: 0, background: "rgba(0,0,0,.55)", color: "#fff",
-    display: "flex", alignItems: "center", justifyContent: "center", padding: 14,
-  },
-  deleteBtn: {
-    position: "absolute", top: 8, right: 8,
-    width: 28, height: 28, borderRadius: 9999, background: "rgba(255,255,255,.15)",
-    border: "1px solid rgba(255,255,255,.35)", color: "#fff", cursor: "pointer",
-  },
+    /* profile menu */
+    profileMenu: {
+        position: "absolute",
+        bottom: 58,
+        left: -70,
+        background: "#fff",
+        borderRadius: 12,
+        boxShadow: "0 8px 22px rgba(0,0,0,.12)",
+        padding: "10px 12px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "stretch",
+        minWidth: 160,
+        zIndex: 30,
+    },
+    profileName: {
+        fontWeight: 600,
+        fontSize: 14,
+        marginBottom: 8,
+        textAlign: "center",
+        color: "#333",
+    },
+    logoutBtn: {
+        border: "none",
+        borderRadius: 10,
+        background: "#ff4f9a",
+        color: "#fff",
+        padding: "8px 10px",
+        fontSize: 13,
+        cursor: "pointer",
+    },
 
-  lbBackdrop: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,.8)", display: "flex",
-    alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
-  },
-  lbInner: { position: "relative", maxWidth: "92vw", maxHeight: "88vh" },
-  lbImg: { maxWidth: "92vw", maxHeight: "70vh", display: "block", borderRadius: 12 },
-  lbCaption: { color: "#fff", marginTop: 10, textAlign: "center" },
-  lbClose: {
-    position: "absolute", top: -12, right: -12, width: 36, height: 36,
-    borderRadius: 9999, background: "#111", color: "#fff", border: "1px solid #333", cursor: "pointer",
-  },
+    /* main */
+    main: { flex: 1, padding: "42px 48px", position: "relative" },
+
+    /* header/tools */
+    header: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-end",
+        marginBottom: 18,
+    },
+    h1: { fontSize: 44, marginBottom: 4, letterSpacing: -0.5 },
+    muted: { color: "#666", fontSize: 13 },
+    tools: { display: "flex", gap: 8, alignItems: "center" },
+    search: {
+        borderRadius: 12,
+        border: "1px solid #e7e7e7",
+        padding: "10px 12px",
+        outline: "none",
+        minWidth: 260,
+        background: "#fafafa",
+    },
+
+    // Fixed 4x3 grid
+    grid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: 28,
+        maxWidth: 920,
+    },
+
+    // Real photo tile
+    card: {
+        position: "relative",
+        width: "100%",
+        aspectRatio: "1 / 1",
+        borderRadius: 22,
+        overflow: "hidden",
+        background: "#ffdce6",
+        boxShadow: "0 8px 24px rgba(0,0,0,.06)",
+        cursor: "pointer",
+    },
+    img: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
+
+    // Hover overlay
+    overlay: {
+        position: "absolute",
+        inset: 0,
+        background: "rgba(0,0,0,.58)",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 14,
+    },
+
+    // Metadata in overlay
+    metaWrap: {
+        maxWidth: "90%",
+        maxHeight: "80%",
+        overflow: "auto",
+        paddingRight: 6,
+        textAlign: "left",
+    },
+    metaList: { margin: 0, padding: 0 },
+    metaRow: {
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        gap: 8,
+        alignItems: "start",
+        marginTop: 4,
+    },
+    metaKey: { margin: 0, fontSize: 12, opacity: 0.9, fontWeight: 600 },
+    metaVal: { margin: 0, fontSize: 12, opacity: 0.95, wordBreak: "break-word" },
+    deleteBtn: {
+        position: "absolute",
+        top: 8,
+        right: 8,
+        width: 28,
+        height: 28,
+        borderRadius: 9999,
+        background: "rgba(255,255,255,.18)",
+        border: "1px solid rgba(255,255,255,.35)",
+        color: "#fff",
+        cursor: "pointer",
+    },
+
+    // Placeholder
+    placeholder: {
+        width: "100%",
+        aspectRatio: "1 / 1",
+        borderRadius: 22,
+        background: "#ffdce6",
+        boxShadow: "inset 0 0 0 2px rgba(0,0,0,.04)",
+    },
+
+    // Modal / lightbox
+    lbBackdrop: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.7)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+        padding: 16,
+    },
+    lbInner: { position: "relative", maxWidth: "92vw", maxHeight: "88vh" },
+    lbImg: {
+        maxWidth: "92vw",
+        maxHeight: "70vh",
+        display: "block",
+        borderRadius: 12,
+    },
+    lbCaption: { color: "#fff", marginTop: 10, textAlign: "center" },
+    lbClose: {
+        position: "absolute",
+        top: -12,
+        right: -12,
+        width: 36,
+        height: 36,
+        borderRadius: 9999,
+        background: "#111",
+        color: "#fff",
+        border: "1px solid #333",
+        cursor: "pointer",
+    },
 };
