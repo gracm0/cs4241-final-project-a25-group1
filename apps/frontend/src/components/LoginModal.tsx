@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { HoverBorderGradient } from "./hovergradientbutton";
+import { HoverBorderGradient } from "./HoverGradientButton";
 
 type Props = { open: boolean };
 

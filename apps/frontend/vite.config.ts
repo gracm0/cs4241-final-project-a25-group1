@@ -11,4 +11,8 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    outDir: "dist", // default, but explicit is fine
+    sourcemap: true
+  }
 });

@@ -9,11 +9,11 @@ router.post("/signup", async (req, res) => {
   try {
     console.log("Attempting to register user:", email);
     const user = await register(email, password);
-    res.status(201).json({ message: "Signup successful", user });
+    return res.status(201).json({ message: "Signup successful", user });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Signup failed";
-    res.status(400).json({ message });
+    const message = err instanceof Error ? err.message : "Signup failed";
+    const code = message.toLowerCase().includes("exists") ? 409 : 400;
+    return res.status(code).json({ message });
   }
 });
 
@@ -26,7 +26,13 @@ router.post("/login", async (req, res) => {
     }
     res.json({ message: "Login successful", user });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    const message = err instanceof Error ? err.message : "Server error";
+    const code =
+        message.toLowerCase().includes("not found") || message.toLowerCase().includes("invalid")
+            ? 401
+            : 500;
+    return res.status(code).json({ message });
   }
 });
+
 export default router;
