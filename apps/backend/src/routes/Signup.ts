@@ -3,7 +3,7 @@ import { register, login } from "../service/auth";
 
 const router = Router();
 
-router.post("/signup", async (req, res) => {
+router.post("/", async (req, res) => {
   const { first, last, email, password } = req.body;
   console.log("Received signup:", { email, first, last, password });
   try {

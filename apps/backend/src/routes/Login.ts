@@ -3,7 +3,7 @@ import { register, login } from "../service/auth";
 
 const router = Router();
 
-router.post("/login", async (req, res) => {
+router.post("/", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await login(email, password);
