@@ -14,24 +14,35 @@ Your project should consist of a complete Web application, exhibiting facets of 
 ## Instructions
 
 **for groupmates:**
+you NEED to run both front and backend
 
 to run locally on the frontend
 1. cd apps
 2. cd frontend
 3. npm install 
 4. npm run dev
+5. click the server link given
 
-make sure you have everything installed on the backend
+to run locally on the backend 
 1. cd apps
 2. cd backend
-3. npm install
+3. npm install 
+4. npm run dev
 
 for good measure
 1. cd apps
 2. npm install
 
 if you have any questions/errors, pls ask amanda!! thank youuu
+you need to create your own .env file too in order to run it locally 
+1. create new file in backend called .env (it will automatically be put into git ignore so it wont be pushed)
+2. paste this info in
+DB_USER=gymahoney_db_user
+DB_PASS=gymahoney
+MONGO_HOST=cluster0.1famzi9.mongodb.net
+MONGO_DB=photoBucket
 
+then you can connect properly to graces db 
 ## Technologies
 <!--3. An outline of the technologies you used and how you used them.-->
 

@@ -4,7 +4,7 @@ import { compare, hash } from 'bcrypt';
 const SALT = 10;
 
 export interface IUser {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -14,12 +14,26 @@ export interface UserMethods {
 
 export type UserDocument = Document<unknown, {}, IUser> & IUser & UserMethods;
 
-const userSchema = new Schema<IUser, Model<IUser, {}, UserMethods>>({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
+interface UserModel extends Model<IUser, {}, UserMethods> {}
 
-userSchema.pre('save', async function (next) {
+const userSchema = new Schema<IUser, UserModel>(
+    {
+      email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+      password: { type: String, required: true },
+    },
+    {
+      timestamps: true,
+      toJSON: {
+        transform(_doc, ret: Record<string, any>) {
+          delete ret.password;
+          delete ret.__v;
+          return ret;
+        },
+      },
+    }
+);
+
+userSchema.pre<UserDocument>('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await hash(this.password, SALT);
   next();
@@ -29,6 +43,5 @@ userSchema.methods.validatePass = async function (candidatePassword: string) {
   return compare(candidatePassword, this.password);
 };
 
-const User = model<IUser, Model<IUser, {}, UserMethods>>('User', userSchema);
-
+const User = model<IUser, UserModel>('User', userSchema);
 export default User;
