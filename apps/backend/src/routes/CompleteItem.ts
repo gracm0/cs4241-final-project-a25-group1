@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { register, login } from "../service/auth";
+import { getItems, saveItem, deleteItem } from "../controllers/bucketController";
 
 const router = Router();
 
-router.post("/complete-item", async (req, res) => {
-  const { itemId } = req.body; 
-});
+router.get("/", getItems);
+router.post("/", saveItem);
+router.delete("/:id", deleteItem);
 
 export default router;

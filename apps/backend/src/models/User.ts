@@ -17,20 +17,20 @@ export type UserDocument = Document<unknown, {}, IUser> & IUser & UserMethods;
 interface UserModel extends Model<IUser, {}, UserMethods> {}
 
 const userSchema = new Schema<IUser, UserModel>(
-    {
-      email: { type: String, required: true, unique: true, trim: true, lowercase: true },
-      password: { type: String, required: true },
-    },
-    {
-      timestamps: true,
-      toJSON: {
-        transform(_doc, ret: Record<string, any>) {
-          delete ret.password;
-          delete ret.__v;
-          return ret;
-        },
+  {
+    email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    password: { type: String, required: true },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      transform(_doc, ret: Record<string, any>) {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
       },
-    }
+    },
+  }
 );
 
 userSchema.pre<UserDocument>('save', async function (next) {
