@@ -1,5 +1,5 @@
 // src/components/BucketList.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import IconBtn from "../components/IconBtn";
 
@@ -35,6 +35,22 @@ export default function BucketList() {
     const [items, setItems] = useState<Item[]>([newItem()]);
     const [activeBucket, setActiveBucket] = useState<number>(1);
 
+    // ----- Editable title (per-bucket, persisted) -----
+    const [listTitle, setListTitle] = useState<string>("");
+    const prevTitleRef = useRef<string>(""); // for ESC revert
+    const titleKey = (n: number) => `bucket:title:${n}`;
+
+    // Load title when bucket changes
+    useEffect(() => {
+        const stored = localStorage.getItem(titleKey(activeBucket));
+        setListTitle(stored ?? `New Bucket List`);
+    }, [activeBucket]);
+
+    // Persist title on change
+    useEffect(() => {
+        if (listTitle) localStorage.setItem(titleKey(activeBucket), listTitle);
+    }, [listTitle, activeBucket]);
+
     /* ---------------- helpers ---------------- */
     const tint = (p: Priority) =>
         p === "high" ? "#ffb3c0" : p === "med" ? "#ffe089" : p === "low" ? "#c8f1c8" : "#ffe0ea";
@@ -43,7 +59,8 @@ export default function BucketList() {
     const deleteItem = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
     const editItem = (id: string, patch: Partial<Item>) =>
         setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    const toggleDone = (id: string) => editItem(id, { done: !items.find((x) => x.id === id)?.done });
+    const toggleDone = (id: string) =>
+        editItem(id, { done: !items.find((x) => x.id === id)?.done });
 
     const openBucket = (n: number) => {
         setActiveBucket(n);
@@ -58,7 +75,13 @@ export default function BucketList() {
                 <img
                     src="/assets/logo.png"
                     alt="Photobucket logo"
-                    style={{ width: 50, height: 50, marginBottom: 20, borderRadius: 14, boxShadow: "0 6px 18px rgba(0,0,0,.08)" }}
+                    style={{
+                        width: 50,
+                        height: 50,
+                        marginBottom: 20,
+                        borderRadius: 14,
+                        boxShadow: "0 6px 18px rgba(0,0,0,.08)",
+                    }}
                 />
 
                 {Array.from({ length: 4 }).map((_, i) => {
@@ -88,18 +111,53 @@ export default function BucketList() {
                 })}
 
                 <div style={{ flex: 1 }} />
-                {/* use imported IconBtn and pass styles */}
-                <IconBtn style={{ ...S.iconBtn, ...S.plusBtn }} title="Add bucket">＋</IconBtn>
+
+                {/* 🖼️ Bucket Gallery */}
+                <button
+                    onClick={() => nav("/bucket-gallery")}
+                    title="Bucket Gallery"
+                    aria-label="Bucket Gallery"
+                    style={S.iconBtn}
+                >
+                    🖼️
+                </button>
+
+                <div style={{ height: 12 }} />
+
+                {/* Add bucket */}
+                <IconBtn style={{ ...S.iconBtn, ...S.plusBtn }} title="Add bucket">
+                    ＋
+                </IconBtn>
+
                 <div style={{ flex: 1 }} />
+
                 <IconBtn title="Collaborators" style={S.iconBtn}>👥</IconBtn>
-                <IconBtn title="Profile" style={{ ...S.iconBtn, fontWeight: 700, background: "transparent" }}>
+                <IconBtn
+                    title="Profile"
+                    style={{ ...S.iconBtn, fontWeight: 700, background: "transparent" }}
+                >
                     A
                 </IconBtn>
             </aside>
 
             {/* Main */}
             <main style={S.main}>
-                <h1 style={S.h1}>New Bucket List</h1>
+                {/* Editable h1-like input */}
+                <input
+                    value={listTitle}
+                    onChange={(e) => setListTitle(e.target.value)}
+                    onFocus={() => (prevTitleRef.current = listTitle)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+                        if (e.key === "Escape") {
+                            setListTitle(prevTitleRef.current);
+                            (e.currentTarget as HTMLInputElement).blur();
+                        }
+                    }}
+                    placeholder="New Bucket List"
+                    aria-label="Bucket list title"
+                    style={S.h1Input}
+                />
 
                 {/* Avatars (placeholder) */}
                 <div style={S.avatarsRow}>
@@ -114,7 +172,6 @@ export default function BucketList() {
                 <div style={{ display: "grid", gap: 18, maxWidth: 820 }}>
                     {items.map((it) => (
                         <section key={it.id} style={{ ...S.card, background: tint(it.priority) }}>
-                            {/* left: done toggle + title/desc (inline editable) */}
                             <div style={S.cardLeft}>
                                 <button
                                     aria-label="Mark complete"
@@ -146,7 +203,6 @@ export default function BucketList() {
                                 </div>
                             </div>
 
-                            {/* right: delete + meta (location + priority dots) */}
                             <div style={S.cardRight}>
                                 <button title="Delete" onClick={() => deleteItem(it.id)} style={S.closeBtn}>
                                     ✕
@@ -175,7 +231,8 @@ export default function BucketList() {
                                                     style={{
                                                         ...S.priorityDot,
                                                         backgroundColor: opt.color,
-                                                        border: it.priority === opt.key ? "3px solid #1f2937" : "2px solid #d1d5db",
+                                                        border:
+                                                            it.priority === opt.key ? "3px solid #1f2937" : "2px solid #d1d5db",
                                                     }}
                                                 />
                                             ))}
@@ -205,7 +262,11 @@ function Avatar({
 }
 
 /* ---------- constants ---------- */
-const PRIORITY_OPTS: Array<{ key: "high" | "med" | "low"; color: string; title: string }> = [
+const PRIORITY_OPTS: Array<{
+    key: "high" | "med" | "low";
+    color: string;
+    title: string;
+}> = [
     { key: "high", color: "#ff91a3", title: "High (Pink)" },
     { key: "med", color: "#ffd93d", title: "Medium (Yellow)" },
     { key: "low", color: "#00b050", title: "Low (Green)" },
@@ -265,7 +326,19 @@ const S: Record<string, React.CSSProperties> = {
 
     /* main */
     main: { flex: 1, padding: "42px 48px", position: "relative" },
-    h1: { margin: "0 0 18px", fontSize: 42, letterSpacing: 0.2 },
+
+    // H1-looking input
+    h1Input: {
+        margin: "0 0 18px",
+        fontSize: 42,
+        letterSpacing: 0.2,
+        fontWeight: 800,
+        background: "transparent",
+        border: "none",
+        outline: "none",
+        width: "100%",
+        color: "#1f2430",
+    },
 
     avatarsRow: {
         display: "flex",
@@ -285,7 +358,6 @@ const S: Record<string, React.CSSProperties> = {
         boxShadow: "0 4px 12px rgba(0,0,0,.08)",
     },
 
-    /* cards */
     card: {
         display: "flex",
         justifyContent: "space-between",
@@ -357,7 +429,6 @@ const S: Record<string, React.CSSProperties> = {
 
     priorityDot: { width: 22, height: 22, borderRadius: "50%", cursor: "pointer" },
 
-    /* FAB */
     fab: {
         position: "absolute",
         right: 46,
