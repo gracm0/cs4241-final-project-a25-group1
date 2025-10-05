@@ -4,11 +4,10 @@ import { register, login } from "./service/auth";
 const router = Router();
 
 router.post("/signup", async (req, res) => {
+  const { first, last, email, password } = req.body;
+  console.log("Received signup:", { email, first, last, password });
   try {
-    const { email, password } = req.body ?? {};
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
+    console.log("Attempting to register user:", email);
     const user = await register(email, password);
     return res.status(201).json({ message: "Signup successful", user });
   } catch (err) {
@@ -19,13 +18,13 @@ router.post("/signup", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body ?? {};
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
     const user = await login(email, password);
-    return res.json({ message: "Login successful", user });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    res.json({ message: "Login successful", user });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Server error";
     const code =
