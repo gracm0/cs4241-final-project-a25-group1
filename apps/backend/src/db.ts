@@ -23,6 +23,9 @@ async function connectDB() {
 export default connectDB;
 
 // TEMP TEST
+// If you want to run a quick test of the DB connection, uncomment below and run `npm run test-db`
+
+
 // connectDB()
 //   .then(() => {
 //     console.log("DB connection test completed. Exiting...");

@@ -4,6 +4,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IBucketItem extends Document {
   email: string;
   bucketNumber: number;
+  bucketTitle?: string;
   title: string;
   desc: string;
   location: string;
@@ -13,10 +14,11 @@ export interface IBucketItem extends Document {
   image?: string;
 }
 
-const bucketItemSchema = new mongoose.Schema( 
+const bucketItemSchema = new Schema<IBucketItem>( 
 {
     email: { type: String, required: true }, // owner or collaborator email
     bucketNumber: { type: Number, required: true, min: 1, max: 4 }, // which bucket (1–4)
+    bucketTitle: { type: String }, // optional title for the bucket
     title: { type: String, required: true },
     desc: { type: String, default: "" },
     location: { type: String, default: "" },
@@ -27,7 +29,7 @@ const bucketItemSchema = new mongoose.Schema(
     },
     done: { type: Boolean, default: false },
     completedAt: { type: Date },
-    image: { type: String }, // for gallery view (optional)
+    image: { type: String },
   },
   { timestamps: true }
 );

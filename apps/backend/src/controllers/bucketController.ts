@@ -1,7 +1,8 @@
 import { BucketItem } from "../models/bucketItem";
 
-export async function getItems(email: string) {
-  const items = await BucketItem.find({ email });
+// get all bucket items for a user, bucket number, and done status
+export async function getItems(email: string, bucketNumber: number, done: boolean) {
+  const items = await BucketItem.find({ email, bucketNumber, done }).sort({ createdAt: -1 });
   return items;
 }
 
@@ -15,17 +16,9 @@ export async function saveItem(data: any) {
   return item;
 }
 
-export async function deleteItem(bucketNumber: Number) {
-  await BucketItem.findByIdAndDelete(bucketNumber);
+// delete a bucket item by bucket ID and title
+export async function deleteItem(bucketNumber: number, title: string) {
+  const deleted = await BucketItem.findOneAndDelete({ bucketNumber, title });
+  if (!deleted) return { success: false, message: "Item not found" };
   return { success: true };
 }
-
-/*
- frontend - add a fetch
-
- await fetch("/api/bucket-items", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(item),
-});
-*/
