@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import routes from './routes';
+import bucketRoutes from './routes/CompleteItem';
 import connectDB from './db';
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API routes
 app.use('/api', routes);
+app.use('/api/bucket-items', bucketRoutes);
 
 // Serve frontend build (apps/frontend/dist)
 const clientDistPath = path.resolve(__dirname, '../../frontend/dist');
