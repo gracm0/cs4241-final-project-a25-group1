@@ -4,9 +4,9 @@ import { register, login } from "../service/auth";
 const router = Router();
 
 router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
   try {
-    const user = await login(username, password);
+    const user = await login(email, password);
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
