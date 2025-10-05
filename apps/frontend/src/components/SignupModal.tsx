@@ -9,7 +9,7 @@ export default function SignupModal({ open }: Props) {
   const nav = useNavigate();
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -32,15 +32,10 @@ export default function SignupModal({ open }: Props) {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:5000/api/signup", {
+      const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first,
-          last,
-          username,
-          password,
-        }),
+        body: JSON.stringify({ first, last, email, password }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -112,9 +107,9 @@ export default function SignupModal({ open }: Props) {
               </div>
               <input
                 required
-                placeholder="Create Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Create Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="h-16 w-full max-w-[400px] text-left text-lg rounded-2xl bg-yellow-200 text-[#302F4D] px-6 font-roboto font-normal"
               />
               <input
@@ -135,7 +130,9 @@ export default function SignupModal({ open }: Props) {
                 </HoverBorderGradient>
               </div>
               {error && (
-                <div className="text-red-500 text-sm font-normal mt-2">{error}</div>
+                <div className="text-red-500 text-sm font-normal mt-2">
+                  {error}
+                </div>
               )}
             </form>
           </div>

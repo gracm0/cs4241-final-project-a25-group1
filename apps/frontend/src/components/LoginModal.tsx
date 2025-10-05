@@ -7,7 +7,7 @@ type Props = { open: boolean };
 
 export default function LoginModal({ open }: Props) {
   const nav = useNavigate();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +30,10 @@ export default function LoginModal({ open }: Props) {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:5000/api/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -43,10 +43,10 @@ export default function LoginModal({ open }: Props) {
       // If login is successful, redirect
       goToApp();
     } catch (err) {
-      setError("Incorrect username or password");
+      setError("Incorrect email or password");
     }
   };
-  
+
   return createPortal(
     <>
       <div
@@ -90,9 +90,9 @@ export default function LoginModal({ open }: Props) {
             >
               <input
                 required
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="h-16 w-full max-w-[400px] text-left text-lg rounded-2xl bg-yellow-200 text-[#302F4D] px-6 font-roboto font-normal mb-2"
               />
               <input

@@ -4,11 +4,11 @@ import { register, login } from "./service/auth";
 const router = Router();
 
 router.post("/signup", async (req, res) => {
-  const { first, last, username, password } = req.body;
-  console.log("Received signup:", { username, first, last, password });
+  const { first, last, email, password } = req.body;
+  console.log("Received signup:", { email, first, last, password });
   try {
-    console.log("Attempting to register user:", username);
-    const user = await register(username, password);
+    console.log("Attempting to register user:", email);
+    const user = await register(email, password);
     res.status(201).json({ message: "Signup successful", user });
   } catch (err) {
     const message =
@@ -18,9 +18,9 @@ router.post("/signup", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
   try {
-    const user = await login(username, password);
+    const user = await login(email, password);
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
