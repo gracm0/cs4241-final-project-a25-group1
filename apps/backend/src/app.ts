@@ -28,7 +28,7 @@ app.get(/^\/(?!api).*/, (_req, res) => {
 async function startServer() {
   try {
     await connectDB();
-    const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+    const port = process.env.PORT ? Number(process.env.PORT) : 5050;
     app.listen(port, () =>
         console.log(`Server running on http://localhost:${port}`)
     );
