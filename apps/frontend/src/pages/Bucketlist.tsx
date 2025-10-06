@@ -64,6 +64,8 @@ export default function BucketList() {
   /* ---------------- per-bucket title (persisted) ---------------- */
   const titleKey = (n: number) => `bucket:title:${n}`;
   const [listTitle, setListTitle] = useState<string>("");
+  const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const editDebounceRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
     const stored = localStorage.getItem(titleKey(activeBucket));
@@ -84,6 +86,33 @@ export default function BucketList() {
     });
     setSidebarTitles(titles);
   }, [listTitle, activeBucket]);
+
+  /* ---------------- Bucket title update handler ---------------- */
+  const handleBucketTitleChange = (newTitle: string) => {
+    // Update local state immediately (optimistic update)
+    setListTitle(newTitle);
+
+    if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
+
+    titleDebounceRef.current = setTimeout(() => {
+      // Persist the new title to backend for all items in this bucket
+    fetch("/item-action/update-bucket-title", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        bucketNumber: activeBucket,
+        bucketTitle: newTitle,
+      }),
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (!result.success) console.warn("Bucket title update failed");
+        else console.log(`Updated ${result.modifiedCount} items`);
+      })
+      .catch((err) => console.error("Failed to update bucket title:", err));
+    }, 400); // 400ms debounce
+  };
 
   /* ---------------- collaborators + invite modal ---------------- */
   type Collab = { id: string; name: string; color: string };
@@ -171,11 +200,69 @@ export default function BucketList() {
     } catch {}
   }, [items, activeBucket]);
 
-  const addItem = () => setItems((xs) => [...xs, makeDefaultItem()]);
-  const deleteItem = (iid: string) =>
-      setItems((xs) => (xs.length <= 1 ? [makeDefaultItem()] : xs.filter((x) => x.id !== iid)));
-  const editItem = (iid: string, patch: Partial<BucketItem>) =>
-      setItems((xs) => xs.map((x) => (x.id === iid ? { ...x, ...patch } : x)));
+  const addItem = () => {
+    setItems((xs) => {
+      const newItem = makeDefaultItem();
+      const updatedItems = [...xs, newItem];
+      return updatedItems;
+    });
+  };
+  const deleteItem = (iid: string) => {
+    setItems((xs) => {
+      const remainingItems = xs.filter((x) => x.id !== iid);
+      const itemToDelete = xs.find((x) => x.id === iid);
+      if (!itemToDelete) return xs;
+
+      // send to backend
+      fetch(`/api/item-action?bucketNumber=${activeBucket}&title=${encodeURIComponent(itemToDelete.title)}`, {
+        method: "DELETE",
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (!result.success) console.warn("Delete failed:", result.message);
+        })
+        .catch((err) => console.error("Failed to delete item:", err));
+      
+      return remainingItems.length > 0 ? remainingItems : [makeDefaultItem()];
+    });
+  };
+  const editItem = (iid: string, patch: Partial<BucketItem>) => {
+    setItems((xs) => {
+      // create updated array with optimistic changes
+      const updatedItems = xs.map((x) => (x.id === iid ? { ...x, ...patch } : x));
+      const updatedItem = updatedItems.find((x) => x.id === iid);
+      if (!updatedItem) return xs;
+
+      const payload = {
+        email: userEmail,
+        bucketNumber: activeBucket,
+        bucketTitle: listTitle,
+        title: updatedItem.title,
+        desc: updatedItem.desc,
+        location: updatedItem.location,
+        priority: updatedItem.priority,
+        done: updatedItem.done,
+      };
+
+      if (editDebounceRef.current[iid]) clearTimeout(editDebounceRef.current[iid]);
+      editDebounceRef.current[iid] = setTimeout(() => {
+        // send to backend
+        fetch("/api/item-action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then((savedItem) => {
+            // update state with backend-confirmed item
+            setItems((xs2) => xs2.map((x) => (x.id === iid ? savedItem : x)));
+          })
+          .catch((err) => console.error("Failed to save item:", err));
+      }, 400) // 400ms debounce
+
+      return updatedItems;
+    });
+  };
 
   /* ---------------- Complete modal wiring ---------------- */
   type ModalItem = {
@@ -346,7 +433,7 @@ export default function BucketList() {
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <input
                       value={listTitle}
-                      onChange={(e) => setListTitle(e.target.value)}
+                      onChange={(e) => handleBucketTitleChange(e.target.value)}
                       placeholder="New Bucket List"
                       aria-label="Bucket list title"
                       className="flex-1 bg-transparent text-[42px] font-bold font-roboto text-[#302F4D] leading-none outline-none min-w-[240px]"

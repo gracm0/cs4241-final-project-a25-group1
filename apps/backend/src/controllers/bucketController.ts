@@ -22,3 +22,12 @@ export async function deleteItem(bucketNumber: number, title: string) {
   if (!deleted) return { success: false, message: "Item not found" };
   return { success: true };
 }
+
+// update all related items with new bucket title 
+export async function updateManyItems(email: string, bucketNumber: number, title: string) {
+  const modified = await BucketItem.updateMany(
+    { email, bucketNumber },
+    { $set: { title } }
+  );
+  return modified;
+}
