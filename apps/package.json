@@ -1,18 +1,19 @@
 {
-  "name": "cs4241-final-project-a25-group1-api",
-  "version": "1.0.0",
+  "name": "cs4241-final-project-a25-group1",
   "private": true,
-  "main": "backend/dist/App.js",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "dev:api": "tsx watch ./backend/src/App.ts --tsconfig ./backend/tsconfig.json",
-    "dev:client": "cd \"front end\" && npm run dev",
-    "dev": "npm-run-all --parallel dev:api dev:client",
-    "build": "cd \"front end\" && npm install && npm run build && cd .. && tsc -b ./backend/tsconfig.json",
-    "start": "node ./backend/dist/App.js",
-    "test": "echo \"No tests yet\" && exit 0"
+    "dev:api": "npm run dev --workspace backend",
+    "dev:client": "npm run dev --workspace frontend",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
+    "build": "npm run build --workspace frontend && npm run build --workspace backend"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
@@ -22,8 +23,8 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/node": "^22.7.5",
     "@types/mongoose": "^5.11.96",
+    "@types/node": "^22.7.5",
     "npm-run-all": "^4.1.5",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
