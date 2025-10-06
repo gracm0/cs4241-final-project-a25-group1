@@ -8,7 +8,7 @@ const router = Router();
 
 router.use("/login", loginRouter);
 router.use("/signup", signupRouter);
-router.use("/item", itemRouter);
+router.use("/item-action", itemRouter);
 router.use("/upload", uploadRouter);
 
 export default router;
