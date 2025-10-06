@@ -68,15 +68,19 @@ export default function BucketList() {
   const editDebounceRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
-    const stored = localStorage.getItem(titleKey(activeBucket));
-    setListTitle(stored ?? "New Bucket List");
-  }, [activeBucket]);
+    const fetchTitle = async () => {
+      try {
+        const res = await fetch(`/api/item-action/get-bucket-title?bucketNumber=${activeBucket}&email=${userEmail}`);
+        const data: { bucketTitle: string } = await res.json();
+        setListTitle(data.bucketTitle ?? "New BucketList");
+      } catch (err) {
+        console.error("Failed to fetch bucket title:", err);
+        setListTitle("New Bucket List");
+      }
+    };
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(titleKey(activeBucket), listTitle);
-    } catch {}
-  }, [listTitle, activeBucket]);
+    fetchTitle();
+  }, [activeBucket, userEmail]);
 
   // Titles for sidebar labels (Bucket 1..4)
   const [sidebarTitles, setSidebarTitles] = useState<string[]>(["", "", "", ""]);
@@ -175,30 +179,20 @@ export default function BucketList() {
   });
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(itemsKey(activeBucket));
-      const parsed: BucketItem[] = raw ? JSON.parse(raw) : [];
-      if (!parsed || parsed.length === 0) {
-        const seeded = [makeDefaultItem()];
-        setItems(seeded);
-        localStorage.setItem(itemsKey(activeBucket), JSON.stringify(seeded));
-      } else {
-        setItems(parsed);
-      }
-    } catch {
-      const seeded = [makeDefaultItem()];
-      setItems(seeded);
+    const fetchItems = async () => {
       try {
-        localStorage.setItem(itemsKey(activeBucket), JSON.stringify(seeded));
-      } catch {}
-    }
-  }, [activeBucket]);
+        const res = await fetch(`/api/item-action?bucketNumber=${activeBucket}&email=${userEmail}`);
+        const data: BucketItem[] = await res.json();
+        if (data.length) setItems(data);
+        else setItems([makeDefaultItem()]); // default if bucket is empty
+      } catch (err) {
+        console.error("Failed to fetch items from backend:", err);
+        setItems([makeDefaultItem()]);
+      }
+    };
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(itemsKey(activeBucket), JSON.stringify(items));
-    } catch {}
-  }, [items, activeBucket]);
+    fetchItems();
+  }, [activeBucket, userEmail]);
 
   const addItem = () => {
     setItems((xs) => {
