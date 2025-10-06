@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import routes from './routes';
-import bucketRoutes from './routes/CompleteItem';
+import bucketRoutes from './routes/Item';
 import uploadRoutes from './routes/Upload';
 import connectDB from './db';
 

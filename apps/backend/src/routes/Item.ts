@@ -5,7 +5,7 @@ const router = Router();
 
 // assumes calls include required parameters
 
-// GET /complete-item
+// GET /item
 // parameters: email, bucketNumber, doneQuery (true/false)
 router.get("/", async (req, res) => {
   try {
@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* POST /complete-item
+/* POST /item
   parameters: 
   email: string;
   bucketNumber: number;
@@ -42,7 +42,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE /complete-item
+// DELETE /item
 // parameters: bucketNumber, title
 router.delete("/", async (req, res) => {
   try {

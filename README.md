@@ -25,18 +25,18 @@ if you have any questions/errors, pls ask amanda!! thank youuu
 you need to create your own .env file too in order to run it locally 
 1. create new file in backend called .env (it will automatically be put into git ignore so it wont be pushed)
 2. paste this info in
->>> Begining
-# MongoDB Atlas credentials
+>Begining
+`# MongoDB Atlas credentials`
 DB_USER=gymahoney_db_user
 DB_PASS=gymahoney
 MONGO_HOST=cluster0.1famzi9.mongodb.net
 MONGO_DB=photoBucket
 
-# Cloudinary credentials
+`# Cloudinary credentials`
 CLOUDINARY_CLOUD_NAME=dya8p6qmw
 CLOUDINARY_API_KEY=744213562827951
 CLOUDINARY_API_SECRET=EhDduo_i1FYS1x82R57xNbTOjjM
->>> End
+>End
 
 then you can connect properly to graces db 
 ## Technologies
