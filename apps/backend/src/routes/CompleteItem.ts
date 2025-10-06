@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { getItems, saveItem, deleteItem } from "../controllers/bucketController";
 
 const router = Router();
