@@ -4,6 +4,8 @@ import { compare, hash } from 'bcrypt';
 const SALT = 10;
 
 export interface IUser {
+  first: string;
+  last: string;
   email: string;
   password: string;
 }
@@ -18,6 +20,8 @@ interface UserModel extends Model<IUser, {}, UserMethods> {}
 
 const userSchema = new Schema<IUser, UserModel>(
   {
+    first: { type: String, required: true },
+    last: { type: String, required: true },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     password: { type: String, required: true },
   },

@@ -8,7 +8,7 @@ router.post("/", async (req, res) => {
   console.log("Received signup:", { email, first, last, password });
   try {
     console.log("Attempting to register user:", email);
-    const user = await register(email, password);
+    const user = await register(first, last, email, password);
     return res.status(201).json({ message: "Signup successful", user });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Signup failed";
