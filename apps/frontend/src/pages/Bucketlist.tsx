@@ -1,6 +1,6 @@
 // src/components/BucketList.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import CompleteItemModal from "../components/CompleteItemModal";
 import biglogo from "../assets/biglogo.png";
@@ -14,14 +14,15 @@ import {
 import BucketCard, {
   Priority,
   BucketItem,
-  PRIORITY_OPTS,
 } from "../components/BucketCard";
 import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
+import BucketGallery from "../components/BucketGalleryPanel";
 
 /* ---------- main component ---------- */
 export default function BucketList() {
   const nav = useNavigate();
+  const location = useLocation();
 
   const { id } = useParams<{ id?: string }>();
   const [q] = useSearchParams();
@@ -87,12 +88,7 @@ export default function BucketList() {
   }, [listTitle, activeBucket]);
 
   // Titles for sidebar labels (Bucket 1..4)
-  const [sidebarTitles, setSidebarTitles] = useState<string[]>([
-    "",
-    "",
-    "",
-    "",
-  ]);
+  const [sidebarTitles, setSidebarTitles] = useState<string[]>(["", "", "", ""]);
   useEffect(() => {
     const titles = [1, 2, 3, 4].map((n) => {
       return localStorage.getItem(titleKey(n)) ?? `Bucket ${n}`;
@@ -138,9 +134,7 @@ export default function BucketList() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(collabKey(activeBucket));
-      const fallback: Collab[] = [
-        { id: "me", name: userEmail, color: "#ff6b6b" },
-      ];
+      const fallback: Collab[] = [{ id: "me", name: userEmail, color: "#ff6b6b" }];
       setCollabs(raw ? (JSON.parse(raw) as Collab[]) : fallback);
     } catch {
       setCollabs([{ id: "me", name: userEmail, color: "#ff6b6b" }]);
@@ -153,9 +147,9 @@ export default function BucketList() {
     } catch {}
   }, [collabs, activeBucket]);
 
-  const inviteUrl = `${
-    window.location.origin
-  }/bucket/${activeBucket}?invite=${btoa(`${userEmail}:${activeBucket}`)}`;
+  const inviteUrl = `${window.location.origin}/bucket/${activeBucket}?invite=${btoa(
+    `${userEmail}:${activeBucket}`
+  )}`;
 
   /* ---------------- per-bucket items (persisted) ---------------- */
   const itemsKey = (n: number) => `bucket:${n}:items`;
@@ -235,9 +229,17 @@ export default function BucketList() {
     setCompleteItem(null);
   };
 
-  const openBucket = (n: number) => nav(`/bucket/${n}`);
+  /* ---------------- actions ---------------- */
+  const openBucket = (n: number) => {
+    nav(`/bucket/${n}`); // always go to bucket route
+  };
 
-  // Top logo (collapses/expands with sidebar)
+  // route-driven gallery mode
+  const galleryOpen = location.pathname.endsWith("/bucket/gallery");
+  const goGallery = () => nav("/bucket/gallery");
+  const goList = () => nav(`/bucket/${activeBucket}`);
+
+  /* ---------------- brand (collapses with sidebar) ---------------- */
   function Brand() {
     const { open, animate } = useSidebar();
     return (
@@ -260,15 +262,16 @@ export default function BucketList() {
     );
   }
 
+  /* ---------------- render ---------------- */
   return (
     <div className="min-h-screen font-sans bg-[#FF99A7]">
       <Sidebar>
         <SidebarBody
-          className="fixed left-0 top-0 h-screen z-40 !px-3 !py-4
-                     bg-gradient-to-r from-[#FFD639]/75 to-[#FF99A7]/75
-                     hidden md:flex md:flex-col"
+          className="fixed left-0 top-0 z-40 h-screen !px-3 !py-4 hidden md:flex md:flex-col
+                     bg-gradient-to-r from-[#FFD639]/75 to-[#FF99A7]/75"
         >
           <Brand />
+
           {/* Buckets */}
           <nav className="flex flex-col gap-4">
             {[1, 2, 3, 4].map((n) => (
@@ -281,11 +284,11 @@ export default function BucketList() {
                     <img
                       src={gallerylogo}
                       alt={`New Bucket List`}
-                      className="w-[55px] h-[55px] rounded-[10px]"
+                      className="h-[55px] w-[55px] rounded-[10px]"
                     />
                   ),
                 }}
-                className="mb-6 px-2 overflow-hidden whitespace-nowrap font-medium font-roboto text-[#302F4D]"
+                className="mb-6 overflow-hidden whitespace-nowrap px-2 font-roboto font-medium text-[#302F4D]"
                 onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                   e.preventDefault();
                   openBucket(n);
@@ -293,24 +296,30 @@ export default function BucketList() {
               />
             ))}
           </nav>
+
           <div className="flex-1" />
-          {/* Gallery */}
+
           <SidebarLink
             link={{
               href: "#",
-              label: "Gallery",
+              label: "Bucket Gallery",
               icon: (
-                <span className="w-12 h-12 grid place-items-center rounded-[14px] text-2xl shadow-[0_6px_18px_rgba(0,0,0,0.08)]">
-                  🖼️
-                </span>
+                    <img
+                      src={biglogo}
+                      alt={`Bucket Gallery`}
+                      className="h-[55px] w-[55px] rounded-[10px]"
+                    />
               ),
             }}
-            className="rounded-xl px-2 overflow-hidden whitespace-nowrap hover:bg-white/20"
+            className={`mb-6 overflow-hidden whitespace-nowrap px-2 font-roboto font-medium text-[#302F4D]${
+              galleryOpen ? "" : ""
+            }`}
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault();
-              nav("/bucket-gallery");
+              if (!galleryOpen) goGallery();
             }}
           />
+
           {/* Profile + Logout */}
           <div ref={profileRef} className="relative mt-2">
             <button
@@ -318,7 +327,7 @@ export default function BucketList() {
               title="Profile"
               aria-haspopup="menu"
               aria-expanded={showProfile ? true : false}
-              className="w-12 h-12 grid place-items-center rounded-[14px] bg-transparent font-bold"
+              className="grid h-12 w-12 place-items-center rounded-[14px] bg-transparent font-bold"
             >
               {userEmail.charAt(0).toUpperCase()}
             </button>
@@ -327,7 +336,7 @@ export default function BucketList() {
                 role="menu"
                 className="absolute bottom-[58px] left-[-70px] z-30 min-w-[160px] rounded-xl bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.12)]"
               >
-                <div className="text-center text-sm font-semibold text-neutral-800 mb-2">
+                <div className="mb-2 text-center text-sm font-semibold text-neutral-800">
                   {userEmail}
                 </div>
                 <button
@@ -344,58 +353,69 @@ export default function BucketList() {
 
         {/* Animated main that condenses/expands with the sidebar */}
         <AnimatedMain>
-          <input
-            value={listTitle}
-            onChange={(e) => setListTitle(e.target.value)}
-            placeholder="New Bucket List"
-            aria-label="Bucket list title"
-            className="mb-4 w-full bg-transparent text-[42px] font-extrabold leading-none outline-none"
-          />
+          {/* Header: switches based on gallery vs list */}
+          {galleryOpen ? (
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-[42px] font-bold font-roboto leading-none text-[#302F4D]">All Buckets Gallery</h1>
+            </div>
+          ) : (
+            <input
+              value={listTitle}
+              onChange={(e) => setListTitle(e.target.value)}
+              placeholder="New Bucket List"
+              aria-label="Bucket list title"
+              className="mb-4 w-full bg-transparent text-[42px] font-bold font-roboto text-[#302F4D] leading-none outline-none"
+            />
+          )}
 
-          {/* Collaborators row */}
-          <div className="mb-4 flex items-center gap-2">
-            {collabs.map((c) => (
-              <Avatar
-                key={c.id}
-                bg={c.color}
-                onRemove={
-                  c.id === "me" ? undefined : () => removeCollaborator(c.id)
-                }
+          {galleryOpen ? (
+            <BucketGallery />
+          ) : (
+            <>
+              {/* Collaborators row */}
+              <div className="mb-4 flex items-center gap-2">
+                {collabs.map((c) => (
+                  <Avatar
+                    key={c.id}
+                    bg={c.color}
+                    onRemove={c.id === "me" ? undefined : () => removeCollaborator(c.id)}
+                  >
+                    {initials(c.name)}
+                  </Avatar>
+                ))}
+                {!canAddMore && <span className="text-xs opacity-70">(Max 4)</span>}
+                <button
+                  title="Invite collaborators (max 4)"
+                  onClick={() => setInviteOpen(true)}
+                  className="ml-2 grid h-10 w-10 place-items-center rounded-full bg-[#ff4f9a] text-2xl text-white shadow-[0_10px_24px_rgba(255,79,154,0.35)]"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Cards */}
+              <div className="grid max-w-[820px] gap-[18px]">
+                {items.map((it) => (
+                  <BucketCard
+                    key={it.id}
+                    item={it}
+                    onDelete={() => deleteItem(it.id)}
+                    onEdit={(patch) => editItem(it.id, patch)}
+                    onOpenComplete={() => openCompleteFor(it)}
+                  />
+                ))}
+              </div>
+
+              {/* Floating add button */}
+              <button
+                title="Add new item"
+                onClick={addItem}
+                className="fixed bottom-[38px] right-[46px] grid h-[60px] w-[60px] place-items-center rounded-full bg-[#ff4f9a] text-[36px] text-white shadow-[0_14px_28px_rgba(255,79,154,0.35)]"
               >
-                {initials(c.name)}
-              </Avatar>
-            ))}
-            {!canAddMore && <span className="text-xs opacity-70">(Max 4)</span>}
-            <button
-              title="Invite collaborators (max 4)"
-              onClick={() => setInviteOpen(true)}
-              className="ml-2 grid h-10 w-10 place-items-center rounded-full bg-[#ff4f9a] text-white text-2xl shadow-[0_10px_24px_rgba(255,79,154,0.35)]"
-            >
-              +
-            </button>
-          </div>
-
-          {/* Cards */}
-          <div className="grid max-w-[820px] gap-[18px]">
-            {items.map((it) => (
-              <BucketCard
-                key={it.id}
-                item={it}
-                onDelete={() => deleteItem(it.id)}
-                onEdit={(patch) => editItem(it.id, patch)}
-                onOpenComplete={() => openCompleteFor(it)}
-              />
-            ))}
-          </div>
-
-          {/* Floating add button */}
-          <button
-            title="Add new item"
-            onClick={addItem}
-            className="fixed right-[46px] bottom-[38px] grid h-[60px] w-[60px] place-items-center rounded-full bg-[#ff4f9a] text-white text-[36px] shadow-[0_14px_28px_rgba(255,79,154,0.35)]"
-          >
-            ＋
-          </button>
+                ＋
+              </button>
+            </>
+          )}
         </AnimatedMain>
       </Sidebar>
 
@@ -407,12 +427,9 @@ export default function BucketList() {
             onClick={() => setInviteOpen(false)}
           />
           <div className="fixed left-1/2 top-1/2 z-[9999] w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-black/10 bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.25)]">
-            <h3 className="mb-2 text-[20px] font-extrabold">
-              Invite collaborators
-            </h3>
+            <h3 className="mb-2 text-[20px] font-extrabold">Invite collaborators</h3>
             <p className="mb-3 text-[13px] opacity-75">
-              Share this link or add people by name. Max 4 total (including
-              you).
+              Share this link or add people by name. Max 4 total (including you).
             </p>
 
             <div className="mb-3 flex gap-2">
@@ -502,11 +519,12 @@ function AnimatedMain({ children }: React.PropsWithChildren) {
     };
   }, []);
 
+  // Match Sidebar's widths: 100 (collapsed) ↔ 300 (expanded)
   const gutter = isMdUp ? (open ? 300 : 100) : 0;
 
   return (
     <motion.main
-      className="relative p-12 rounded-l-3xl shadow-lg min-h-screen bg-white"
+      className="relative min-h-screen rounded-l-3xl bg-white p-12 shadow-lg"
       animate={{ marginLeft: gutter }}
       transition={
         animate

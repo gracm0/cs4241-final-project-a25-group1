@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
 import BucketList from "./pages/Bucketlist"; // <- all-in-one page
-import BucketGallery from "./pages/BucketGallery";
 
 export default function App() {
     return (
@@ -19,9 +18,6 @@ export default function App() {
 
             {/* Alias so deep links like /bucket/2 still work */}
             <Route path="/bucket/:id" element={<BucketList />} />
-
-            {/* Bucket Gallery */}
-            <Route path="/bucket-gallery" element={<BucketGallery />} />
 
             {/* Optional alias */}
             <Route path="/app" element={<Navigate to="/bucketlist" replace />} />
