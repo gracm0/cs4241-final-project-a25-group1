@@ -195,8 +195,38 @@ export default function BucketList() {
     setItems((xs) =>
       xs.length <= 1 ? [makeDefaultItem()] : xs.filter((x) => x.id !== iid)
     );
-  const editItem = (iid: string, patch: Partial<BucketItem>) =>
+  const editItem = (iid: string, patch: Partial<BucketItem>) => {
+    // optimistically update local state
     setItems((xs) => xs.map((x) => (x.id === iid ? { ...x, ...patch } : x)));
+
+    const updatedItem = items.find((x) => x.id === iid);
+    if (!updatedItem) return;
+
+    const payload = {
+      email: userEmail,
+      bucketNumber: activeBucket,
+      bucketTitle: listTitle,
+      title: patch.title ?? updatedItem.title,
+      desc: patch.desc ?? updatedItem.desc,
+      location: patch.location ?? updatedItem.location,
+      priority: patch.priority ?? updatedItem.priority,
+      done: patch.done ?? updatedItem.done ?? false
+    };
+
+    fetch("api/saveItem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+    .then((res) => res.json())
+    .then((savedItem) => {
+      // Optional: update state with backend-confirmed item
+      setItems((xs) =>
+        xs.map((x) => (x.id === iid ? savedItem : x))
+      );
+    })
+    .catch((err) => console.error("Failed to save item:", err));
+  }
 
   /* ---------------- Complete modal wiring ---------------- */
   type ModalItem = {
