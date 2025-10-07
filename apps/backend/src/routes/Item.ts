@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getItems, saveItem, deleteItem, updateManyItems } from "../controllers/bucketController";
+import { getItems, getAllDoneItems, saveItem, deleteItem, updateManyItems } from "../controllers/bucketController";
 
 const router = Router();
 
@@ -9,9 +9,8 @@ const router = Router();
 // parameters: email, bucketNumber, doneQuery (true/false)
 router.get("/", async (req, res) => {
   try {
-    const { email, bucketNumber, doneQuery } = req.query;
-    const done = doneQuery === "true" ? true : false; 
-    const items = await getItems(email as string, Number(bucketNumber), done);
+    const { email, bucketNumber} = req.query;
+    const items = await getItems(email as string, Number(bucketNumber));
     // Ensure each item has an 'id' property for React key
     const itemsWithId = items.map((item: any) => ({
       ...item.toObject(),
@@ -20,6 +19,31 @@ router.get("/", async (req, res) => {
     res.json(itemsWithId);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch items" });
+  }
+});
+
+// GET /item-action?email={...}
+// parameters: email
+// done: true
+router.get("/", async (req, res) => {
+  try {
+    const { email } = req.query;
+    const items = await getAllDoneItems(email as string);
+
+    console.log("Fetched items:", items); // <-- debug
+
+    if (!Array.isArray(items)) {
+      console.error("getAllDoneItems did not return an array");
+      return res.status(500).json({ error: "Invalid return from getAllDoneItems" });
+    }
+
+    const itemsWithId = items.map((item: any) => ({
+      ...item.toObject(),
+      id: item._id.toString(),
+    }));
+    res.json(itemsWithId);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch completed items" });
   }
 });
 

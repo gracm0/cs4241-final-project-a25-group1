@@ -1,8 +1,14 @@
 import { BucketItem } from "../models/bucketItem";
 
 // get all bucket items for a user, bucket number, and done status
-export async function getItems(email: string, bucketNumber: number, done: boolean) {
-  const items = await BucketItem.find({ email, bucketNumber, done }).sort({ createdAt: -1 });
+export async function getItems(email: string, bucketNumber: number) {
+  const items = await BucketItem.find({ email, bucketNumber }).sort({ createdAt: -1 });
+  return items;
+}
+
+// get all completed bucket items for a user
+export async function getAllDoneItems(email: string) {
+  const items = await BucketItem.find({ email, done: true }).sort({ createdAt: -1 });
   return items;
 }
 

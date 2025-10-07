@@ -19,9 +19,7 @@ import BucketCard, { Priority, BucketItem } from "../components/BucketCard";
 import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import friend from "../assets/icons8-person-64.png";
-import BucketGallery, {
-  GALLERY_LS_KEY,
-} from "../components/BucketGalleryPanel";
+import BucketGallery from "../components/BucketGalleryPanel";
 
 interface UserType {
   first: string;
@@ -376,36 +374,12 @@ export default function BucketList() {
     const itemToUpdate = items.find((x) => x.id === completeItem.id);
     if (!itemToUpdate || !user?.email) return;
 
-    // 1) Optimistically mark the item done (keeps it in the list)
+    // Optimistically mark the item done (keeps it in the list)
     setItems((xs) =>
       xs.map((x) => (x.id === completeItem.id ? { ...x, done: true } : x))
     );
 
-    // 2) Add photo to gallery LS
-    try {
-      const raw = localStorage.getItem(GALLERY_LS_KEY);
-      const gallery = raw ? JSON.parse(raw) : [];
-      const newPhoto = {
-        id: itemToUpdate.id,
-        title: itemToUpdate.title,
-        desc: itemToUpdate.desc,
-        date: args.dateCompleted || new Date().toISOString().slice(0, 10),
-        src: imageUrl,
-        createdAt: new Date().toISOString(),
-        extra: {
-          location: itemToUpdate.location,
-          priority: itemToUpdate.priority,
-        },
-      };
-      gallery.unshift(newPhoto);
-      localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(gallery));
-      window.dispatchEvent(new Event("gallery:changed"));
-      console.log("Gallery after completion:", gallery);
-    } catch (err) {
-      console.error("Failed to add to gallery:", err);
-    }
-
-    // 3) Persist to backend (done + image)
+    // Persist to backend (done + image)
     try {
       await fetch("/api/item-action", {
         method: "POST",
@@ -424,7 +398,6 @@ export default function BucketList() {
         }),
       });
 
-      // Refresh full list (both done + not done)
       const res = await fetch(
         `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}`
       );
@@ -471,7 +444,6 @@ export default function BucketList() {
   const openBucket = (n: number) => nav(`/bucket/${n}`);
   const galleryOpen = location.pathname.endsWith("/bucket/gallery");
   const goGallery = () => nav("/bucket/gallery");
-  const goList = () => nav(`/bucket/${activeBucket}`);
 
   if (loadingUser) return <div>Loading...</div>;
 
@@ -590,11 +562,14 @@ export default function BucketList() {
         {/* Animated main that condenses/expands with the sidebar */}
         <AnimatedMain>
           {galleryOpen ? (
-            <div className="mb-6 flex items-center justify-between">
-              <h1 className="text-[42px] font-extrabold font-roboto leading-none text-[#302F4D]">
-                All Buckets Gallery
-              </h1>
-            </div>
+            <>
+              <div className="mb-6 flex items-center justify-between">
+                <h1 className="text-[42px] font-extrabold font-roboto leading-none text-[#302F4D]">
+                  All Buckets Gallery
+                </h1>
+              </div>
+              {user && <BucketGallery email={user.email} />}
+            </>
           ) : (
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <input
@@ -629,7 +604,7 @@ export default function BucketList() {
           )}
 
           {galleryOpen ? (
-            <BucketGallery />
+            user && <BucketGallery email={user.email} />
           ) : (
             <>
               {/* Top bar: optional reset when all items are finished */}
