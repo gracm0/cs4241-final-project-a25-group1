@@ -328,7 +328,7 @@ export default function BucketList() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              _id: updatedItem._id, // undefined if new
+              _id: updatedItem._id, 
               email: user.email,
               bucketNumber: activeBucket,
               bucketTitle: listTitle,
@@ -474,9 +474,6 @@ export default function BucketList() {
         .map(({ it }) => it);
   }, [items]);
 
-
-  const allFinished = items.length > 0 && items.every((i) => i.done);
-
   async function resetWholeList() {
     if (!confirm("Reset this bucket back to an empty list?")) return;
 
@@ -500,7 +497,6 @@ export default function BucketList() {
   const openBucket = (n: number) => nav(`/bucket/${n}`);
   const galleryOpen = location.pathname.endsWith("/bucket/gallery");
   const goGallery = () => nav("/bucket/gallery");
-  const goList = () => nav(`/bucket/${activeBucket}`);
 
   // Control main page scroll when gallery is open
   useEffect(() => {
@@ -547,7 +543,7 @@ export default function BucketList() {
         <Sidebar>
           <SidebarBody
               className="fixed left-0 top-0 z-40 h-screen !px-3 !py-4 hidden md:flex md:flex-col
-                     bg-gradient-to-r from-[#FFD639]/75 to-[#FF99A7]/75"
+                     bg-gradient-to-r from-[#FFD639] to-[#FF99A7]"
           >
             <Brand />
 
@@ -563,7 +559,7 @@ export default function BucketList() {
                             <img
                                 src={gallerylogo}
                                 alt={`New Bucket List`}
-                                className="h-[55px] w-[55px] rounded-[10px]"
+                                className="h-[55px] w-[55px]"
                             />
                         ),
                       }}
@@ -822,7 +818,7 @@ function AnimatedMain({ children }: React.PropsWithChildren) {
 
   return (
       <motion.main
-          className="relative h-screen rounded-l-[35px] bg-white p-20 shadow-lg "
+          className="relative min-h-screen rounded-l-[35px] bg-white p-20 shadow-lg "
           animate={{ marginLeft: gutter }}
           transition={
             animate
