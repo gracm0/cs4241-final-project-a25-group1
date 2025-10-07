@@ -89,16 +89,17 @@ export default function CompleteItemModal({
         setUploadedUrl(data.url); // replace temp preview with real uploaded URL
       } else {
         console.error("Upload failed", data);
-        setUploadedUrl(null);
+        alert("Upload failed. Please try again.");
+        setUploadedUrl(null); // clear invalid temp URL
       }
     } catch (err) {
       console.error("Upload error", err);
+      alert("Upload failed. Please try again.");
       setUploadedUrl(null);
-    } finally {
-      setLoading(false);
+  } finally {
+    setLoading(false);
     }
   };
-
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
