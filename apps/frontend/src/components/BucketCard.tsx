@@ -3,7 +3,7 @@ import React from "react";
 export type Priority = "" | "high" | "med" | "low";
 export type BucketItem = {
   id: string;
-  _id?: string; // optional MongoDB ID
+  _id?: string;
   title: string;
   desc: string;
   location: string;
@@ -11,14 +11,27 @@ export type BucketItem = {
   done: boolean;
 };
 
+const COLORS = {
+  yellow: "#FFD639",
+  pink: "#FF99A7",
+  green: "#00AF54",
+};
+
 export const PRIORITY_OPTS: Array<{ key: "high" | "med" | "low"; color: string; title: string }> = [
-  { key: "high", color: "#ff91a3", title: "High (Pink)" },
-  { key: "med", color: "#ffd93d", title: "Medium (Yellow)" },
-  { key: "low", color: "#00b050", title: "Low (Green)" },
+  { key: "med",  color: COLORS.yellow, title: "Medium (Yellow)" },
+  { key: "high", color: COLORS.pink,   title: "High (Pink)" },
+  { key: "low",  color: COLORS.green,  title: "Low (Green)" },
 ];
 
-const tint = (p: Priority) =>
-  p === "high" ? "bg-[#ffd2dc]" : p === "med" ? "bg-[#ffe28f]" : p === "low" ? "bg-[#56c98d]" : "bg-[#ffe0ea]";
+const cardTint = (p: Priority): string => {
+  const eff = p === "" ? "med" : p;
+  switch (eff) {
+    case "high": return "#FFE0E6";
+    case "med":  return "#FFF5CC";
+    case "low":  return "#CCF3DB";
+    default:     return "#FFF5CC";
+  }
+};
 
 export default function BucketCard({
   item,
@@ -29,22 +42,47 @@ export default function BucketCard({
   item: BucketItem;
   onDelete: () => void;
   onEdit: (patch: Partial<BucketItem>) => void;
-  onOpenComplete: () => void;
+  onOpenComplete: (onSuccess: () => void) => void;
 }) {
+  const priorityEffective: Priority = item.priority === "" ? "med" : item.priority;
+
+  const handleMarkComplete = () => {
+    if (!item.done) {
+      // open modal first, only mark complete after success
+      onOpenComplete(() => {
+        onEdit({ done: true });
+      });
+    }
+  };
+
   return (
-    <section className={["flex items-stretch justify-between rounded-2xl p-4 max-w-[780px] shadow-lg", tint(item.priority)].join(" ")}>
-      {/* LEFT */}
-      <div className="flex items-center gap-3.5">
+    <section
+      className="relative flex items-stretch justify-between rounded-2xl p-4 max-w-[780px] shadow-lg"
+      style={{ backgroundColor: cardTint(item.priority) }}
+    >
+      {/* DELETE */}
+      <button
+        title="Delete"
+        onClick={onDelete}
+        className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/20 text-white hover:bg-black/30 transition"
+      >
+        ✕
+      </button>
+
+      {/* LEFT: toggle + text */}
+      <div className="flex items-start gap-3.5">
+        {/* Circular complete toggle */}
         <button
-          aria-label={item.done ? "Completed" : "Complete with photo"}
-          onClick={onOpenComplete}
-          title={item.done ? "Completed" : "Complete with photo"}
+          onClick={handleMarkComplete}
+          disabled={item.done} // once done, disable forever
           className={[
-            "h-[34px] rounded-full px-3 font-extrabold",
-            item.done ? "cursor-default bg-emerald-500 text-white opacity-90" : "cursor-pointer bg-[#ff4f9a] text-white shadow-[0_6px_16px_rgba(255,79,154,0.35)]",
+            "mt-1 h-8 w-8 rounded-full border-2 grid place-items-center transition",
+            item.done
+              ? "border-emerald-600 bg-emerald-600 text-white cursor-not-allowed"
+              : "border-black/30 bg-white/60 hover:bg-white"
           ].join(" ")}
         >
-          {item.done ? "Completed" : "Complete"}
+          {item.done ? "✓" : ""}
         </button>
 
         <div>
@@ -52,23 +90,25 @@ export default function BucketCard({
             placeholder="Start Building Your Bucket"
             value={item.title}
             onChange={(e) => onEdit({ title: e.target.value })}
-            className="min-w-[260px] bg-transparent text-[18px] font-extrabold text-neutral-900 outline-none"
+            className={[
+              "min-w-[260px] bg-transparent text-[18px] font-extrabold text-neutral-900 outline-none",
+              item.done ? "line-through opacity-60" : ""
+            ].join(" ")}
           />
           <input
             placeholder="Add Your Description"
             value={item.desc}
             onChange={(e) => onEdit({ desc: e.target.value })}
-            className="mt-0.5 min-w-[220px] bg-transparent text-[13px] text-neutral-700/85 outline-none"
+            className={[
+              "mt-0.5 min-w-[220px] bg-transparent text-[13px] text-neutral-700/85 outline-none",
+              item.done ? "line-through opacity-60" : ""
+            ].join(" ")}
           />
         </div>
       </div>
 
-      {/* RIGHT */}
+      {/* RIGHT: location + priority */}
       <div className="flex items-start gap-2.5">
-        <button title="Delete" onClick={onDelete} className="grid h-[26px] w-[26px] place-items-center rounded-full bg-black/15 text-white">
-          ✕
-        </button>
-
         <div className="rounded-[14px] bg-white/55 px-3 py-2.5">
           <div className="mt-1 flex items-center gap-2.5">
             <span className="min-w-[64px] text-[12px] text-black/70">Location:</span>
@@ -88,8 +128,10 @@ export default function BucketCard({
                   key={opt.key}
                   onClick={() => onEdit({ priority: opt.key })}
                   title={opt.title}
-                  aria-label={`Set priority ${opt.title}`}
-                  className={["h-[22px] w-[22px] rounded-full border", item.priority === opt.key ? "border-[3px] border-gray-800" : "border-[2px] border-gray-300"].join(" ")}
+                  className={[
+                    "h-[22px] w-[22px] rounded-full border transition",
+                    priorityEffective === opt.key ? "border-[3px] border-gray-800" : "border-[2px] border-gray-300"
+                  ].join(" ")}
                   style={{ backgroundColor: opt.color }}
                 />
               ))}
