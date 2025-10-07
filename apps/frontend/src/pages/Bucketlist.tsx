@@ -109,12 +109,12 @@ export default function BucketList() {
           `/api/item-action/get-bucket-title?bucketNumber=${activeBucket}&email=${user.email}`
         );
         const data: { bucketTitle: string } = await res.json();
-        const title = data.bucketTitle ?? "New BucketList";
+        const title = data.bucketTitle ?? "";
         setListTitle(title);
         localStorage.setItem(titleKey(activeBucket), title);
       } catch (err) {
         console.error("Failed to fetch bucket title:", err);
-        setListTitle("New Bucket List");
+        setListTitle("");
       }
     };
 
@@ -207,8 +207,8 @@ export default function BucketList() {
 
   const makeDefaultItem = (): BucketItem => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    title: "Start Building Your Bucket",
-    desc: "Add Your Description",
+    title: "",
+    desc: "",
     location: "",
     priority: "",
     done: false,
@@ -300,8 +300,60 @@ export default function BucketList() {
   const [completeItem, setCompleteItem] = useState<ModalItem | null>(null);
   const openCompleteFor = (it: BucketItem) => setCompleteItem({ id: it.id, title: it.title, subtitle: it.desc || undefined, locationName: it.location || undefined });
 
-  const handleCompleteSubmit = async (args: { itemId: string; dateCompleted?: string; photo?: File | Blob; photoKind: "upload" | "camera" | null }) => {
-    setItems((xs) => xs.map((x) => (x.id === args.itemId ? { ...x, done: true } : x)));
+  const handleCompleteSubmit = async (args: { 
+    itemId: string; 
+    dateCompleted?: string; 
+    uploadedUrl: string;
+    photoKind: "upload" | "camera" | null 
+  }) => {
+    if (!args.uploadedUrl) {
+      alert("Please upload a photo to complete this item.");
+      return;
+    }
+
+    const imageUrl = args.uploadedUrl;
+
+    // Find the item and mark it done
+    if (!completeItem) return;
+    const itemToUpdate = items.find(x => x.id === completeItem.id);
+    if (!itemToUpdate || !user?.email) return;
+
+    // optimistically remove
+    setItems(xs => xs.filter(x => x.id !== completeItem.id));
+
+    // persist to backend
+    try {
+      await fetch("/api/item-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _id: itemToUpdate._id,
+          email: user.email,
+          bucketNumber: activeBucket,
+          bucketTitle: listTitle,
+          title: itemToUpdate.title,
+          desc: itemToUpdate.desc,
+          location: itemToUpdate.location,
+          priority: itemToUpdate.priority,
+          done: true,
+          image: imageUrl,
+        }),
+      });
+
+      // re-fetch fresh list from backend
+      const res = await fetch(
+        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}&doneQuery=false`
+      );
+      if (res.ok) {
+        const freshItems = await res.json();
+        setItems(freshItems.length ? freshItems : [makeDefaultItem()]);
+      }
+    } catch (err) {
+      console.error("Failed to complete item:", err);
+      alert("Failed to complete item.");
+    }
+
+    // close modal
     setCompleteItem(null);
   };
 
