@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import routes from './routes';
 import bucketRoutes from './routes/Item';
 import uploadRoutes from './routes/Upload';
@@ -12,11 +14,30 @@ const app = express();
 // Fix CORS: allow frontend origin and handle preflight requests
 app.use(cors({
   origin: 'http://localhost:5173',
-  credentials: true,
+  credentials: true, // allow cookies
 }));
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "supersecretkey",
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.MONGO_HOST}/?retryWrites=true&w=majority&appName=Cluster0`,
+      collectionName: "sessions",
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
+    },
+  })
+);
 
 // API routes
 app.use('/api', routes);

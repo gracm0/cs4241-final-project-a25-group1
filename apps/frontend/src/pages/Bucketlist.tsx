@@ -1,4 +1,3 @@
-// src/components/BucketList.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
@@ -11,11 +10,22 @@ import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import BucketGallery from "../components/BucketGalleryPanel";
 
+interface UserType {
+  first: string;
+  last: string;
+  email: string;
+}
+
+interface Collab {
+  id: string;
+  name: string;
+  color: string;
+}
+
 /* ---------- main component ---------- */
 export default function BucketList() {
   const nav = useNavigate();
   const location = useLocation();
-
   const { id } = useParams<{ id?: string }>();
   const [q] = useSearchParams();
 
@@ -28,11 +38,29 @@ export default function BucketList() {
   }, [id, q]);
 
   /* ---------------- auth / profile menu ---------------- */
-  const userEmail =
-      localStorage.getItem("email") || sessionStorage.getItem("email") || "User";
-
+  const [user, setUser] = useState<UserType | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" });
+        if (!res.ok) throw new Error("Failed to fetch user");
+        const data = await res.json();
+        setUser(data.user);
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setUser(null);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const displayName = user ? `${user.first} ${user.last}` : "User";
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -50,35 +78,50 @@ export default function BucketList() {
     };
   }, []);
 
-  function handleLogout() {
+  async function handleLogout() {
     try {
-      localStorage.removeItem("email");
-      localStorage.removeItem("token");
-      sessionStorage.removeItem("email");
-      sessionStorage.removeItem("token");
-    } catch {}
-    fetch("/logout", { method: "POST", credentials: "include" }).catch(() => {});
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
     nav("/");
   }
 
-  /* ---------------- per-bucket title (persisted) ---------------- */
+  /* ---------------- per-bucket title ---------------- */
   const titleKey = (n: number) => `bucket:title:${n}`;
   const [listTitle, setListTitle] = useState<string>("");
   const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const editDebounceRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
-    const stored = localStorage.getItem(titleKey(activeBucket));
-    setListTitle(stored ?? "New Bucket List");
-  }, [activeBucket]);
+    if (!user?.email) return;
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(titleKey(activeBucket), listTitle);
-    } catch {}
-  }, [listTitle, activeBucket]);
+    // Try to get cached title from localStorage first
+    const cachedTitle = localStorage.getItem(titleKey(activeBucket));
+    if (cachedTitle) {
+      setListTitle(cachedTitle);
+      return; // no need to fetch from server
+    }
 
-  // Titles for sidebar labels (Bucket 1..4)
+    // Otherwise fetch from server
+    const fetchTitle = async () => {
+      try {
+        const res = await fetch(
+          `/api/item-action/get-bucket-title?bucketNumber=${activeBucket}&email=${user.email}`
+        );
+        const data: { bucketTitle: string } = await res.json();
+        const title = data.bucketTitle ?? "New BucketList";
+        setListTitle(title);
+        localStorage.setItem(titleKey(activeBucket), title);
+      } catch (err) {
+        console.error("Failed to fetch bucket title:", err);
+        setListTitle("New Bucket List");
+      }
+    };
+
+    fetchTitle();
+  }, [activeBucket, user?.email]);
+
+  /* ---------------- Sidebar titles ---------------- */
   const [sidebarTitles, setSidebarTitles] = useState<string[]>(["", "", "", ""]);
   useEffect(() => {
     const titles = [1, 2, 3, 4].map((n) => {
@@ -87,41 +130,62 @@ export default function BucketList() {
     setSidebarTitles(titles);
   }, [listTitle, activeBucket]);
 
-  /* ---------------- Bucket title update handler ---------------- */
   const handleBucketTitleChange = (newTitle: string) => {
-    // Update local state immediately (optimistic update)
     setListTitle(newTitle);
+    localStorage.setItem(titleKey(activeBucket), newTitle);
 
     if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
 
-    titleDebounceRef.current = setTimeout(() => {
-      // Persist the new title to backend for all items in this bucket
-    fetch("/item-action/update-bucket-title", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: userEmail,
-        bucketNumber: activeBucket,
-        bucketTitle: newTitle,
-      }),
-    })
-      .then((res) => res.json())
-      .then((result) => {
+    titleDebounceRef.current = setTimeout(async () => {
+      if (!user?.email) return;
+
+      try {
+        const res = await fetch("/api/item-action/update-bucket-title", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.email,
+            bucketNumber: activeBucket,
+            bucketTitle: newTitle,
+          }),
+        });
+        const result = await res.json();
+
         if (!result.success) console.warn("Bucket title update failed");
-        else console.log(`Updated ${result.modifiedCount} items`);
-      })
-      .catch((err) => console.error("Failed to update bucket title:", err));
-    }, 400); // 400ms debounce
+
+        // **Optional:** update local state for all items
+        setItems((prevItems) =>
+          prevItems.map((item) => ({ ...item, bucketTitle: newTitle }))
+        );
+
+      } catch (err) {
+        console.error("Failed to update bucket title:", err);
+      }
+    }, 400);
   };
 
-  /* ---------------- collaborators + invite modal ---------------- */
-  type Collab = { id: string; name: string; color: string };
-  const [collabs, setCollabs] = useState<Collab[]>([
-    { id: "me", name: userEmail, color: "#ff6b6b" },
-  ]);
+  /* ---------------- collaborators ---------------- */
+  const [collabs, setCollabs] = useState<Collab[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const canAddMore = collabs.length < 4;
 
+  useEffect(() => {
+    if (!user?.email) return;
+    try {
+      const raw = localStorage.getItem(`bucket:${activeBucket}:collabs`);
+      const fallback: Collab[] = [{ id: "me", name: user.email, color: "#ff6b6b" }];
+      setCollabs(raw ? (JSON.parse(raw) as Collab[]) : fallback);
+    } catch {
+      setCollabs([{ id: "me", name: user.email, color: "#ff6b6b" }]);
+    }
+  }, [activeBucket, user?.email]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`bucket:${activeBucket}:collabs`, JSON.stringify(collabs));
+    } catch {}
+  }, [collabs, activeBucket]);
+
+  const canAddMore = collabs.length < 4;
   const addCollaborator = (raw: string) => {
     const name = raw.trim();
     if (!name || !canAddMore) return;
@@ -129,41 +193,17 @@ export default function BucketList() {
     const palette = ["#2ecc71", "#3498db", "#9b59b6", "#f39c12", "#e67e22", "#e84393"];
     setCollabs((cs) => [
       ...cs,
-      {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        name,
-        color: palette[Math.floor(Math.random() * palette.length)],
-      },
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name, color: palette[Math.floor(Math.random() * palette.length)] },
     ]);
   };
-  const removeCollaborator = (cid: string) =>
-      cid !== "me" && setCollabs((cs) => cs.filter((c) => c.id !== cid));
+  const removeCollaborator = (cid: string) => cid !== "me" && setCollabs((cs) => cs.filter((c) => c.id !== cid));
 
-  const collabKey = (n: number) => `bucket:${n}:collabs`;
+  const inviteUrl = user ? `${window.location.origin}/bucket/${activeBucket}?invite=${btoa(`${user.email}:${activeBucket}`)}` : "";
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(collabKey(activeBucket));
-      const fallback: Collab[] = [{ id: "me", name: userEmail, color: "#ff6b6b" }];
-      setCollabs(raw ? (JSON.parse(raw) as Collab[]) : fallback);
-    } catch {
-      setCollabs([{ id: "me", name: userEmail, color: "#ff6b6b" }]);
-    }
-  }, [activeBucket, userEmail]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(collabKey(activeBucket), JSON.stringify(collabs));
-    } catch {}
-  }, [collabs, activeBucket]);
-
-  const inviteUrl = `${window.location.origin}/bucket/${activeBucket}?invite=${btoa(
-      `${userEmail}:${activeBucket}`
-  )}`;
-
-  /* ---------------- per-bucket items (persisted) ---------------- */
+  /* ---------------- bucket items ---------------- */
   const itemsKey = (n: number) => `bucket:${n}:items`;
   const [items, setItems] = useState<BucketItem[]>([]);
+  const editDebounceRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const makeDefaultItem = (): BucketItem => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -172,99 +212,83 @@ export default function BucketList() {
     location: "",
     priority: "",
     done: false,
+    _id: undefined, // not set until saved
   });
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(itemsKey(activeBucket));
-      const parsed: BucketItem[] = raw ? JSON.parse(raw) : [];
-      if (!parsed || parsed.length === 0) {
-        const seeded = [makeDefaultItem()];
-        setItems(seeded);
-        localStorage.setItem(itemsKey(activeBucket), JSON.stringify(seeded));
-      } else {
-        setItems(parsed);
-      }
-    } catch {
-      const seeded = [makeDefaultItem()];
-      setItems(seeded);
+    if (!user?.email) return;
+    const fetchItems = async () => {
       try {
-        localStorage.setItem(itemsKey(activeBucket), JSON.stringify(seeded));
-      } catch {}
-    }
-  }, [activeBucket]);
+        const res = await fetch(`/api/item-action?bucketNumber=${activeBucket}&email=${user.email}`);
+        const data: BucketItem[] = await res.json();
+        setItems(data.length ? data : [makeDefaultItem()]);
+      } catch (err) {
+        console.error("Failed to fetch items:", err);
+        setItems([makeDefaultItem()]);
+      }
+    };
+    fetchItems();
+  }, [activeBucket, user?.email]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(itemsKey(activeBucket), JSON.stringify(items));
-    } catch {}
-  }, [items, activeBucket]);
+  const addItem = () => setItems((xs) => [...xs, makeDefaultItem()]);
 
-  const addItem = () => {
-    setItems((xs) => {
-      const newItem = makeDefaultItem();
-      const updatedItems = [...xs, newItem];
-      return updatedItems;
-    });
-  };
   const deleteItem = (iid: string) => {
     setItems((xs) => {
-      const remainingItems = xs.filter((x) => x.id !== iid);
-      const itemToDelete = xs.find((x) => x.id === iid);
-      if (!itemToDelete) return xs;
+      const remaining = xs.filter((x) => x.id !== iid);
+      const toDelete = xs.find((x) => x.id === iid);
+      if (!toDelete || !user?.email) return xs;
 
-      // send to backend
-      fetch(`/api/item-action?bucketNumber=${activeBucket}&title=${encodeURIComponent(itemToDelete.title)}`, {
+      fetch(`/api/item-action?email=${user.email}&bucketNumber=${activeBucket}&title=${encodeURIComponent(toDelete.title)}`, {
         method: "DELETE",
       })
         .then((res) => res.json())
         .then((result) => {
           if (!result.success) console.warn("Delete failed:", result.message);
         })
-        .catch((err) => console.error("Failed to delete item:", err));
-      
-      return remainingItems.length > 0 ? remainingItems : [makeDefaultItem()];
+        .catch(console.error);
+
+      return remaining.length ? remaining : [makeDefaultItem()];
     });
   };
+
   const editItem = (iid: string, patch: Partial<BucketItem>) => {
     setItems((xs) => {
-      // create updated array with optimistic changes
       const updatedItems = xs.map((x) => (x.id === iid ? { ...x, ...patch } : x));
       const updatedItem = updatedItems.find((x) => x.id === iid);
-      if (!updatedItem) return xs;
-
-      const payload = {
-        email: userEmail,
-        bucketNumber: activeBucket,
-        bucketTitle: listTitle,
-        title: updatedItem.title,
-        desc: updatedItem.desc,
-        location: updatedItem.location,
-        priority: updatedItem.priority,
-        done: updatedItem.done,
-      };
+      if (!updatedItem || !user?.email) return xs;
 
       if (editDebounceRef.current[iid]) clearTimeout(editDebounceRef.current[iid]);
-      editDebounceRef.current[iid] = setTimeout(() => {
-        // send to backend
-        fetch("/api/item-action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-          .then((res) => res.json())
-          .then((savedItem) => {
-            // update state with backend-confirmed item
-            setItems((xs2) => xs2.map((x) => (x.id === iid ? savedItem : x)));
-          })
-          .catch((err) => console.error("Failed to save item:", err));
-      }, 400) // 400ms debounce
+      editDebounceRef.current[iid] = setTimeout(async () => {
+        try {
+          const res = await fetch("/api/item-action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              _id: updatedItem._id, // undefined if new
+              email: user.email,
+              bucketNumber: activeBucket,
+              bucketTitle: listTitle,
+              title: updatedItem.title,
+              desc: updatedItem.desc,
+              location: updatedItem.location,
+              priority: updatedItem.priority,
+              done: updatedItem.done,
+            }),
+          });
+          const savedItem = await res.json();
+          setItems((xs2) =>
+             xs2.map((x) => (x.id === iid ? { ...x, _id: savedItem._id } : x))
+          );
+        } catch (err) {
+          console.error("Failed to save item:", err);
+        }
+      }, 400);
 
       return updatedItems;
     });
   };
 
-  /* ---------------- Complete modal wiring ---------------- */
+  /* ---------------- Complete modal ---------------- */
   type ModalItem = {
     id: string;
     title: string;
@@ -274,34 +298,20 @@ export default function BucketList() {
     cityStateZip?: string;
   };
   const [completeItem, setCompleteItem] = useState<ModalItem | null>(null);
+  const openCompleteFor = (it: BucketItem) => setCompleteItem({ id: it.id, title: it.title, subtitle: it.desc || undefined, locationName: it.location || undefined });
 
-  const openCompleteFor = (it: BucketItem) =>
-      setCompleteItem({
-        id: it.id,
-        title: it.title,
-        subtitle: it.desc || undefined,
-        locationName: it.location || undefined,
-      });
-
-  const handleCompleteSubmit = async (args: {
-    itemId: string;
-    dateCompleted?: string;
-    photo?: File | Blob;
-    photoKind: "upload" | "camera" | null;
-  }) => {
+  const handleCompleteSubmit = async (args: { itemId: string; dateCompleted?: string; photo?: File | Blob; photoKind: "upload" | "camera" | null }) => {
     setItems((xs) => xs.map((x) => (x.id === args.itemId ? { ...x, done: true } : x)));
     setCompleteItem(null);
   };
 
   /* ---------------- actions ---------------- */
-  const openBucket = (n: number) => {
-    nav(`/bucket/${n}`); // always go to bucket route
-  };
-
-  // route-driven gallery mode
+  const openBucket = (n: number) => nav(`/bucket/${n}`);
   const galleryOpen = location.pathname.endsWith("/bucket/gallery");
   const goGallery = () => nav("/bucket/gallery");
   const goList = () => nav(`/bucket/${activeBucket}`);
+
+  if (loadingUser) return <div>Loading...</div>;
 
   /* ---------------- brand (collapses with sidebar) ---------------- */
   function Brand() {
@@ -391,7 +401,7 @@ export default function BucketList() {
                   aria-expanded={showProfile ? true : false}
                   className="grid h-12 w-12 place-items-center rounded-[14px] bg-transparent font-bold"
               >
-                {userEmail.charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </button>
 
 
@@ -406,7 +416,7 @@ export default function BucketList() {
 
 
                   <div className="mb-2 text-center text-sm font-semibold text-neutral-800">
-                      {userEmail}
+                      {displayName}
                     </div>
                     <button
                         type="button"
