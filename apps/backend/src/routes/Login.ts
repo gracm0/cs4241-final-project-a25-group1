@@ -10,7 +10,12 @@ router.post("/", async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    res.json({ message: "Login successful", user });
+    
+    // save user info in session
+    req.session.userId = user._id.toString();
+    console.log("Session after login:", req.session); // DEBUG
+
+    res.json({ message: "Login successful", user: { first: user.first, last: user.last, email: user.email } });
   } catch (err) {
     // If it's an Error instance, get its message
     const message = err instanceof Error ? err.message : "Login failed";

@@ -32,6 +32,7 @@ export default function LoginModal({ open }: Props) {
     try {
       const res = await fetch("/api/login", {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });

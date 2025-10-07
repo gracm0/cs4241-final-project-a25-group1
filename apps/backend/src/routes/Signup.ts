@@ -9,7 +9,9 @@ router.post("/", async (req, res) => {
   try {
     console.log("Attempting to register user:", email);
     const user = await register(first, last, email, password);
-    return res.status(201).json({ message: "Signup successful", user });
+    req.session.userId = user._id.toString();
+
+    return res.json({ message: "Login successful", user: { first: user.first, last: user.last, email: user.email } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Signup failed";
     const code = message.toLowerCase().includes("exists") ? 409 : 400;

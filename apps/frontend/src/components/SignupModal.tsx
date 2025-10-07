@@ -34,6 +34,7 @@ export default function SignupModal({ open }: Props) {
     try {
       const res = await fetch("/api/signup", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ first, last, email, password }),
       });

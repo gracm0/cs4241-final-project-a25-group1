@@ -32,6 +32,10 @@ DB_PASS=gymahoney
 MONGO_HOST=cluster0.1famzi9.mongodb.net
 MONGO_DB=photoBucket
 
+`# Express session secret (used to sign cookies)`
+SESSION_SECRET=hFj39s82nF!9@jsdf83msd9sn!
+NODE_ENV=development # Change to production in deployment
+
 `# Cloudinary credentials`
 CLOUDINARY_CLOUD_NAME=dya8p6qmw
 CLOUDINARY_API_KEY=744213562827951
