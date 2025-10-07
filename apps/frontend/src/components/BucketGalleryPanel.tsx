@@ -5,9 +5,9 @@ export type Photo = {
   id: string;
   title: string;
   desc?: string;
-  date: string;       // YYYY-MM-DD (completion date)
-  src: string;        // image URL or DataURL
-  createdAt: string;  // ISO
+  date: string;
+  src: string;
+  createdAt: string;
   extra?: Record<string, string | number | boolean | null>;
 };
 
@@ -22,7 +22,33 @@ function formatKey(k: string) {
     .replace(/\b\w/g, (s) => s.toUpperCase());
 }
 
-/* ---------- component ---------- */
+function readGallery(): Photo[] {
+  try {
+    const raw = localStorage.getItem(GALLERY_LS_KEY);
+    const arr = raw ? (JSON.parse(raw) as any[]) : [];
+    return arr.map((p) => ({
+      id: p.id ?? crypto.randomUUID(),
+      title: p.title ?? "",
+      desc: p.desc ?? undefined,
+      src: p.src ?? p.uploadedUrl ?? "",
+      date:
+        p.date ??
+        p.dateCompleted ??
+        new Date(p.createdAt ?? Date.now()).toISOString().slice(0, 10),
+      createdAt: p.createdAt ?? new Date().toISOString(),
+      extra: p.extra ?? (p.photokind ? { photokind: p.photokind } : undefined),
+    })) as Photo[];
+  } catch {
+    return [];
+  }
+}
+
+function writeGallery(next: Photo[]) {
+  try {
+    localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(next));
+  } catch {}
+}
+
 export default function BucketGalleryPanel({
   className,
   style,
@@ -31,54 +57,54 @@ export default function BucketGalleryPanel({
   style?: React.CSSProperties;
   title?: string;
 }) {
-  // Always reload gallery when window regains focus
-  useEffect(() => {
-    function reloadGallery() {
-      try {
-        const raw = localStorage.getItem(GALLERY_LS_KEY);
-        if (raw) setPhotos(JSON.parse(raw));
-      } catch {}
-    }
-    window.addEventListener("focus", reloadGallery);
-    return () => window.removeEventListener("focus", reloadGallery);
-  }, []);
   const [photos, setPhotos] = useState<Photo[]>([]);
-  // Debug: log loaded photos
-  useEffect(() => {
-    console.log('BucketGalleryPanel photos:', photos);
-  }, [photos]);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Photo | null>(null);
 
-  // Load once from localStorage; (your backend fetch can be re-added later if needed)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(GALLERY_LS_KEY);
-      if (raw) setPhotos(JSON.parse(raw));
-    } catch {}
+    setPhotos(readGallery());
   }, []);
 
-  // Live sync when anyone writes to the gallery LS key
+  // Debugging
+  useEffect(() => {
+    console.log("BucketGalleryPanel photos:", photos);
+  }, [photos]);
+
+  useEffect(() => {
+    function reload() {
+      setPhotos(readGallery());
+    }
+    window.addEventListener("focus", reload);
+    return () => window.removeEventListener("focus", reload);
+  }, []);
+
+  // Cross-tab sync
   useEffect(() => {
     function onStorage(e: StorageEvent) {
-      if (e.key === GALLERY_LS_KEY && e.newValue) {
-        try {
-          setPhotos(JSON.parse(e.newValue));
-        } catch {}
+      if (e.key === GALLERY_LS_KEY) {
+        setPhotos(readGallery());
       }
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Persist local edits (e.g., deletes)
+  // Same-tab sync (BucketList dispatches this after saving)
   useEffect(() => {
-    try {
-      localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(photos));
-    } catch {}
-  }, [photos]);
+    function onSameTabChange() {
+      setPhotos(readGallery());
+    }
+    window.addEventListener(
+      "gallery:changed",
+      onSameTabChange as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "gallery:changed",
+        onSameTabChange as EventListener
+      );
+  }, []);
 
-  // Esc to close lightbox
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setActive(null);
@@ -111,7 +137,12 @@ export default function BucketGalleryPanel({
 
   function onDelete(id: string) {
     if (!confirm("Delete this photo?")) return;
-    setPhotos((prev) => prev.filter((p) => p.id !== id));
+    setPhotos((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      writeGallery(next); // persist only here
+      window.dispatchEvent(new Event("gallery:changed")); // notify others
+      return next;
+    });
     if (active?.id === id) setActive(null);
   }
 
@@ -160,15 +191,23 @@ export default function BucketGalleryPanel({
                     <div className="mt-1 text-[13px] opacity-95">{p.desc}</div>
                   ) : null}
                   <div className="mt-1 text-[12px] opacity-90">
-                    Completed: {new Date(p.date || p.createdAt).toLocaleDateString()}
+                    Completed:{" "}
+                    {new Date(p.date || p.createdAt).toLocaleDateString()}
                   </div>
 
                   {p.extra && (
                     <dl className="mt-2">
                       {Object.entries(p.extra).map(([k, v]) => (
-                        <div key={k} className="grid grid-cols-[auto_1fr] items-start gap-2">
-                          <dt className="text-[12px] font-semibold opacity-90">{formatKey(k)}</dt>
-                          <dd className="text-[12px] opacity-95 break-words">{String(v)}</dd>
+                        <div
+                          key={k}
+                          className="grid grid-cols-[auto_1fr] items-start gap-2"
+                        >
+                          <dt className="text-[12px] font-semibold opacity-90">
+                            {formatKey(k)}
+                          </dt>
+                          <dd className="text-[12px] opacity-95 break-words">
+                            {String(v)}
+                          </dd>
                         </div>
                       ))}
                     </dl>
@@ -212,7 +251,9 @@ export default function BucketGalleryPanel({
             />
             <div className="mt-2 text-center text-white">
               <div className="font-semibold">{active.title}</div>
-              {active.desc ? <div className="opacity-85">{active.desc}</div> : null}
+              {active.desc ? (
+                <div className="opacity-85">{active.desc}</div>
+              ) : null}
               <div className="mt-1 text-[12px] opacity-70">
                 {new Date(active.date || active.createdAt).toLocaleString()}
               </div>

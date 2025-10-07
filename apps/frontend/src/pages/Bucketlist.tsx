@@ -18,8 +18,10 @@ import {
 import BucketCard, { Priority, BucketItem } from "../components/BucketCard";
 import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
-import BucketGallery from "../components/BucketGalleryPanel";
 import friend from "../assets/icons8-person-64.png";
+import BucketGallery, {
+  GALLERY_LS_KEY,
+} from "../components/BucketGalleryPanel";
 
 interface UserType {
   first: string;
@@ -239,7 +241,6 @@ export default function BucketList() {
     : "";
 
   /* ---------------- bucket items ---------------- */
-  const itemsKey = (n: number) => `bucket:${n}:items`;
   const [items, setItems] = useState<BucketItem[]>([]);
   const editDebounceRef = useRef<Record<string, NodeJS.Timeout>>({});
 
@@ -253,10 +254,12 @@ export default function BucketList() {
     _id: undefined, // not set until saved
   });
 
+  // Fetch ALL items (both done + not done) so we can sort and show completed at the bottom.
   useEffect(() => {
     if (!user?.email) return;
     const fetchItems = async () => {
       try {
+        // no done filter → return every item for this bucket
         const res = await fetch(
           `/api/item-action?bucketNumber=${activeBucket}&email=${user.email}`
         );
@@ -334,7 +337,7 @@ export default function BucketList() {
     });
   };
 
-  /* ---------------- Complete modal ---------------- */
+  /* ---------- “complete” flow: mark done, push photo to gallery, keep in list ---------- */
   type ModalItem = {
     id: string;
     title: string;
@@ -352,44 +355,41 @@ export default function BucketList() {
       locationName: it.location || undefined,
     });
 
-  const handleCompleteSubmit = async (args: { 
-    itemId: string; 
-    dateCompleted?: string; 
+  const handleCompleteSubmit = async (args: {
+    itemId: string;
+    dateCompleted?: string;
     uploadedUrl: string;
-    photoKind: "upload" | "camera" | null 
+    photoKind: "upload" | "camera" | null;
   }) => {
     if (!args.uploadedUrl) {
       alert("Please upload a photo to complete this item.");
       return;
     }
-
-    // Only use the final image URL (not a blob: URL)
-    let imageUrl = args.uploadedUrl;
-    // If it's a blob: URL, try to get the final URL from localStorage (CompleteItemModal should set this after upload)
-    if (imageUrl.startsWith('blob:')) {
-      // fallback: do not add to gallery if not a real URL
-      alert('Image upload did not complete. Please wait for the upload to finish.');
+    const imageUrl = args.uploadedUrl;
+    if (imageUrl.startsWith("blob:")) {
+      alert(
+        "Image upload did not complete. Please wait for the upload to finish."
+      );
       return;
     }
-
-    // Find the item and mark it done
     if (!completeItem) return;
-    const itemToUpdate = items.find(x => x.id === completeItem.id);
+    const itemToUpdate = items.find((x) => x.id === completeItem.id);
     if (!itemToUpdate || !user?.email) return;
 
-    // optimistically remove
-    setItems(xs => xs.filter(x => x.id !== completeItem.id));
+    // 1) Optimistically mark the item done (keeps it in the list)
+    setItems((xs) =>
+      xs.map((x) => (x.id === completeItem.id ? { ...x, done: true } : x))
+    );
 
-    // Add to gallery in localStorage
+    // 2) Add photo to gallery LS
     try {
-      const GALLERY_LS_KEY = "gallery:all";
       const raw = localStorage.getItem(GALLERY_LS_KEY);
       const gallery = raw ? JSON.parse(raw) : [];
       const newPhoto = {
         id: itemToUpdate.id,
         title: itemToUpdate.title,
         desc: itemToUpdate.desc,
-        date: args.dateCompleted || new Date().toISOString().slice(0,10),
+        date: args.dateCompleted || new Date().toISOString().slice(0, 10),
         src: imageUrl,
         createdAt: new Date().toISOString(),
         extra: {
@@ -398,15 +398,14 @@ export default function BucketList() {
         },
       };
       gallery.unshift(newPhoto);
-  localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(gallery));
-  // Trigger storage event so gallery updates in same tab
-  window.dispatchEvent(new StorageEvent('storage', { key: GALLERY_LS_KEY, newValue: JSON.stringify(gallery) }));
-  console.log('Gallery after completion:', gallery);
+      localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(gallery));
+      window.dispatchEvent(new Event("gallery:changed"));
+      console.log("Gallery after completion:", gallery);
     } catch (err) {
       console.error("Failed to add to gallery:", err);
     }
 
-    // persist to backend
+    // 3) Persist to backend (done + image)
     try {
       await fetch("/api/item-action", {
         method: "POST",
@@ -425,22 +424,48 @@ export default function BucketList() {
         }),
       });
 
-      // re-fetch fresh list from backend
+      // Refresh full list (both done + not done)
       const res = await fetch(
-        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}&doneQuery=false`
+        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}`
       );
       if (res.ok) {
-        const freshItems = await res.json();
-        setItems(freshItems.length ? freshItems : [makeDefaultItem()]);
+        const fresh = await res.json();
+        setItems(fresh.length ? fresh : [makeDefaultItem()]);
       }
     } catch (err) {
       console.error("Failed to complete item:", err);
       alert("Failed to complete item.");
     }
 
-    // close modal
     setCompleteItem(null);
   };
+
+  /* ---------------- computed ordering + reset logic ---------------- */
+  const orderedItems = useMemo(() => {
+    // Incomplete (done=false) first, then completed (done=true); keep stable order within groups
+    return [...items].sort((a, b) => Number(a.done) - Number(b.done));
+  }, [items]);
+
+  const allFinished = items.length > 0 && items.every((i) => i.done);
+
+  async function resetWholeList() {
+    if (!confirm("Reset this bucket back to an empty list?")) return;
+
+    // client-side reset
+    setItems([makeDefaultItem()]);
+
+    // optional server reset (best-effort; ignore failure)
+    try {
+      await fetch(
+        `/api/item-action/reset-bucket?email=${encodeURIComponent(
+          user?.email || ""
+        )}&bucketNumber=${activeBucket}`,
+        { method: "POST" }
+      );
+    } catch (e) {
+      // ignore
+    }
+  }
 
   /* ---------------- actions ---------------- */
   const openBucket = (n: number) => nav(`/bucket/${n}`);
@@ -546,20 +571,20 @@ export default function BucketList() {
               setShowProfile((s) => !s);
             }}
           />
-        {showProfile && (
-          <div
-            role="menu"
+          {showProfile && (
+            <div
+              role="menu"
               className="absolute left-1/4 mb-2 -translate-x-1/5 translate-y-[620px] z-80 min-w-[100px] flex flex-col items-center"
-          >
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full rounded-full bg-[#0092E0] px-3 py-2 text-xs font-bold text-white"
             >
-              Log Out
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full rounded-full bg-[#0092E0] px-3 py-2 text-xs font-bold text-white"
+              >
+                Log Out
+              </button>
+            </div>
+          )}
         </SidebarBody>
 
         {/* Animated main that condenses/expands with the sidebar */}
@@ -591,9 +616,7 @@ export default function BucketList() {
                     {initials(c.name)}
                   </Avatar>
                 ))}
-                {!canAddMore && (
-                  <span className="opacity-70">(Max 4)</span>
-                )}
+                {!canAddMore && <span className="opacity-70">(Max 4)</span>}
                 <button
                   title="Invite collaborators (max 4)"
                   onClick={() => setInviteOpen(true)}
@@ -609,9 +632,23 @@ export default function BucketList() {
             <BucketGallery />
           ) : (
             <>
-              {/* Cards */}
+              {/* Top bar: optional reset when all items are finished */}
+              {allFinished && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={resetWholeList}
+                    className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 hover:bg-rose-100"
+                    title="Reset bucket to empty"
+                  >
+                    Reset Bucket
+                  </button>
+                </div>
+              )}
+
+              {/* Cards — render ordered so completed sink to the bottom */}
               <div className="grid max-w-[820px] gap-[18px]">
-                {items.map((it) => (
+                {orderedItems.map((it) => (
                   <BucketCard
                     key={it.id}
                     item={it}
