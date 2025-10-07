@@ -102,21 +102,12 @@ export default function BucketList() {
   }
 
   /* ---------------- per-bucket title ---------------- */
-  const titleKey = (n: number) => `bucket:title:${n}`;
   const [listTitle, setListTitle] = useState<string>("");
   const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!user?.email) return;
-
-    // Try to get cached title from localStorage first
-    const cachedTitle = localStorage.getItem(titleKey(activeBucket));
-    if (cachedTitle) {
-      setListTitle(cachedTitle);
-      return; // no need to fetch from server
-    }
-
-    // Otherwise fetch from server
+    // Always fetch from server
     const fetchTitle = async () => {
       try {
         const res = await fetch(
@@ -125,39 +116,42 @@ export default function BucketList() {
         const data: { bucketTitle: string } = await res.json();
         const title = data.bucketTitle ?? "";
         setListTitle(title);
-        localStorage.setItem(titleKey(activeBucket), title);
       } catch (err) {
         console.error("Failed to fetch bucket title:", err);
         setListTitle("");
       }
     };
-
     fetchTitle();
   }, [activeBucket, user?.email]);
 
   /* ---------------- Sidebar titles ---------------- */
-  const [sidebarTitles, setSidebarTitles] = useState<string[]>([
-    "",
-    "",
-    "",
-    "",
-  ]);
+  const [sidebarTitles, setSidebarTitles] = useState<string[]>(["", "", "", ""]);
   useEffect(() => {
-    const titles = [1, 2, 3, 4].map((n) => {
-      return localStorage.getItem(titleKey(n)) ?? `Bucket ${n}`;
-    });
-    setSidebarTitles(titles);
-  }, [listTitle, activeBucket]);
+    if (!user?.email) return;
+    const fetchSidebarTitles = async () => {
+      try {
+        const results = await Promise.all(
+          [1, 2, 3, 4].map(async (n) => {
+            const res = await fetch(
+              `/api/item-action/get-bucket-title?bucketNumber=${n}&email=${user.email}`
+            );
+            const data: { bucketTitle: string } = await res.json();
+            return data.bucketTitle ?? `Bucket ${n}`;
+          })
+        );
+        setSidebarTitles(results);
+      } catch (err) {
+        setSidebarTitles(["Bucket 1", "Bucket 2", "Bucket 3", "Bucket 4"]);
+      }
+    };
+    fetchSidebarTitles();
+  }, [listTitle, activeBucket, user?.email]);
 
   const handleBucketTitleChange = (newTitle: string) => {
     setListTitle(newTitle);
-    localStorage.setItem(titleKey(activeBucket), newTitle);
-
     if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
-
     titleDebounceRef.current = setTimeout(async () => {
       if (!user?.email) return;
-
       try {
         const res = await fetch("/api/item-action/update-bucket-title", {
           method: "POST",
@@ -169,9 +163,7 @@ export default function BucketList() {
           }),
         });
         const result = await res.json();
-
         if (!result.success) console.warn("Bucket title update failed");
-
         // **Optional:** update local state for all items
         setItems((prevItems) =>
           prevItems.map((item) => ({ ...item, bucketTitle: newTitle }))
