@@ -27,13 +27,13 @@
 
   /* Solid big blue pill CTA — now Roboto Medium */
   .btn-sky {
-    background-color: #0092E0; 
+    background-color: #0092e0;
     color: #ffffff;
     font-family: "Roboto", system-ui, sans-serif;
     font-weight: 500;
-    border-radius: 9999px; 
+    border-radius: 9999px;
     font-size: 1rem;
-    padding: .75rem 2rem; 
+    padding: 0.75rem 2rem;
   }
 
   .logo-badge {

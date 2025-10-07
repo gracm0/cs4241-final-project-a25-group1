@@ -1,5 +1,13 @@
 import { Router } from "express";
-import { getItems, getAllDoneItems, saveItem, deleteItem, updateManyItems, getBucketTitle, getAllBucketTitles } from "../controllers/bucketController";
+import {
+  getItems,
+  getAllDoneItems,
+  saveItem,
+  deleteItem,
+  updateManyItems,
+  getBucketTitle,
+  getAllBucketTitles,
+} from "../controllers/bucketController";
 
 const router = Router();
 
@@ -10,16 +18,18 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const { email, bucketNumber, done } = req.query;
-    
-    if (done === 'true') {
+
+    if (done === "true") {
       // Fetch all completed items for the user
       const items = await getAllDoneItems(email as string);
-      
+
       console.log("Fetched completed items:", items); // <-- debug
 
       if (!Array.isArray(items)) {
         console.error("getAllDoneItems did not return an array");
-        return res.status(500).json({ error: "Invalid return from getAllDoneItems" });
+        return res
+          .status(500)
+          .json({ error: "Invalid return from getAllDoneItems" });
       }
 
       const itemsWithId = items.map((item: any) => ({
@@ -70,8 +80,12 @@ router.post("/", async (req, res) => {
 // parameters: bucketNumber, title
 router.delete("/", async (req, res) => {
   try {
-  const { email, bucketNumber, id } = req.query;
-  const result = await deleteItem(email as string, Number(bucketNumber), id as string);
+    const { email, bucketNumber, id } = req.query;
+    const result = await deleteItem(
+      email as string,
+      Number(bucketNumber),
+      id as string
+    );
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to delete item" });
@@ -82,7 +96,11 @@ router.delete("/", async (req, res) => {
 router.post("/update-bucket-title", async (req, res) => {
   try {
     const { email, bucketNumber, bucketTitle } = req.body;
-    const result = await updateManyItems(email as string, Number(bucketNumber), bucketTitle as string);
+    const result = await updateManyItems(
+      email as string,
+      Number(bucketNumber),
+      bucketTitle as string
+    );
     res.json({ success: true, modifiedCount: result.modifiedCount });
   } catch (err) {
     res.status(500).json({ error: "Failed to update bucket title" });
@@ -93,7 +111,10 @@ router.post("/update-bucket-title", async (req, res) => {
 router.get("/get-bucket-title", async (req, res) => {
   try {
     const { email, bucketNumber } = req.query;
-    const bucketTitle = await getBucketTitle(email as string, Number(bucketNumber));
+    const bucketTitle = await getBucketTitle(
+      email as string,
+      Number(bucketNumber)
+    );
     res.json({ bucketTitle });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch bucket title" });

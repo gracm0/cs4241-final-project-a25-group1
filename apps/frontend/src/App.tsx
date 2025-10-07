@@ -2,28 +2,28 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
-import BucketList from "./pages/Bucketlist"; 
+import BucketList from "./pages/Bucketlist";
 
 export default function App() {
-    return (
-        <Routes>
-            {/* Marketing / landing */}
-            <Route path="/" element={<Home />} />
+  return (
+    <Routes>
+      {/* Marketing / landing */}
+      <Route path="/" element={<Home />} />
 
-            {/* Build page */}
-            <Route path="/build" element={<Build />} />
+      {/* Build page */}
+      <Route path="/build" element={<Build />} />
 
-            {/* Post-login dashboard (4 buckets, editable, invites) */}
-            <Route path="/bucketlist" element={<BucketList />} />
+      {/* Post-login dashboard (4 buckets, editable, invites) */}
+      <Route path="/bucketlist" element={<BucketList />} />
 
-            {/* Alias so deep links like /bucket/2 still work */}
-            <Route path="/bucket/:id" element={<BucketList />} />
+      {/* Alias so deep links like /bucket/2 still work */}
+      <Route path="/bucket/:id" element={<BucketList />} />
 
-            {/* Optional alias */}
-            <Route path="/app" element={<Navigate to="/bucketlist" replace />} />
+      {/* Optional alias */}
+      <Route path="/app" element={<Navigate to="/bucketlist" replace />} />
 
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-    );
+      {/* Catch-all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }

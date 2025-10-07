@@ -32,7 +32,7 @@ function transformBucketItemToPhoto(item: any): Photo | null {
     title: item.title || "Untitled",
     desc: item.desc || undefined,
     src: item.image,
-    date: item.completedAt 
+    date: item.completedAt
       ? new Date(item.completedAt).toISOString().slice(0, 10)
       : new Date(item.createdAt).toISOString().slice(0, 10),
     createdAt: item.createdAt || new Date().toISOString(),
@@ -66,23 +66,27 @@ export default function BucketGalleryPanel({
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log("Fetching current user...");
         // Get current user
-        const response = await api.getCurrentUser() as { user: { email: string; first: string; last: string } };
+        const response = (await api.getCurrentUser()) as {
+          user: { email: string; first: string; last: string };
+        };
         console.log("Current user response:", response);
         setUserEmail(response.user.email);
-        
+
         console.log("Fetching completed items for:", response.user.email);
         // Get completed items with images
-        const items = await api.getCompletedItems(response.user.email) as any[];
+        const items = (await api.getCompletedItems(
+          response.user.email
+        )) as any[];
         console.log("Completed items response:", items);
-        
+
         // Transform items to photos
         const transformedPhotos = items
           .map(transformBucketItemToPhoto)
           .filter((photo: Photo | null): photo is Photo => photo !== null);
-        
+
         console.log("Transformed photos:", transformedPhotos);
         setPhotos(transformedPhotos);
       } catch (err) {
@@ -100,9 +104,9 @@ export default function BucketGalleryPanel({
   useEffect(() => {
     async function reload() {
       if (!userEmail) return;
-      
+
       try {
-        const items = await api.getCompletedItems(userEmail) as any[];
+        const items = (await api.getCompletedItems(userEmail)) as any[];
         const transformedPhotos = items
           .map(transformBucketItemToPhoto)
           .filter((photo: Photo | null): photo is Photo => photo !== null);
@@ -111,7 +115,7 @@ export default function BucketGalleryPanel({
         console.error("Failed to refresh photos:", err);
       }
     }
-    
+
     window.addEventListener("focus", reload);
     return () => window.removeEventListener("focus", reload);
   }, [userEmail]);
@@ -120,9 +124,9 @@ export default function BucketGalleryPanel({
   useEffect(() => {
     async function onBucketUpdate() {
       if (!userEmail) return;
-      
+
       try {
-        const items = await api.getCompletedItems(userEmail) as any[];
+        const items = (await api.getCompletedItems(userEmail)) as any[];
         const transformedPhotos = items
           .map(transformBucketItemToPhoto)
           .filter((photo: Photo | null): photo is Photo => photo !== null);
@@ -131,10 +135,13 @@ export default function BucketGalleryPanel({
         console.error("Failed to refresh photos:", err);
       }
     }
-    
+
     window.addEventListener("gallery:changed", onBucketUpdate as EventListener);
     return () =>
-      window.removeEventListener("gallery:changed", onBucketUpdate as EventListener);
+      window.removeEventListener(
+        "gallery:changed",
+        onBucketUpdate as EventListener
+      );
   }, [userEmail]);
 
   useEffect(() => {
@@ -167,16 +174,16 @@ export default function BucketGalleryPanel({
 
   function onDelete(id: string) {
     if (!confirm("Delete this photo?")) return;
-    
+
     // For now, we'll just remove it from the local state
     // In a full implementation, you might want to add a delete API endpoint
     setPhotos((prev) => {
       const next = prev.filter((p) => p.id !== id);
       return next;
     });
-    
+
     if (active?.id === id) setActive(null);
-    
+
     // Notify other components that the gallery changed
     window.dispatchEvent(new Event("gallery:changed"));
   }
@@ -186,16 +193,13 @@ export default function BucketGalleryPanel({
       <header className="mb-4 flex items-end justify-between">
         <div>
           <p className="text-sm text-black/60">
-            {loading 
-              ? "Loading photos..." 
-              : `${filtered.length} photo${filtered.length !== 1 ? 's' : ''} • sorted by completion date • hover tiles for details`
-            }
+            {loading
+              ? "Loading photos..."
+              : `${filtered.length} photo${
+                  filtered.length !== 1 ? "s" : ""
+                } • sorted by completion date • hover tiles for details`}
           </p>
-          {error && (
-            <p className="text-sm text-red-600 mt-1">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -220,7 +224,7 @@ export default function BucketGalleryPanel({
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-red-600 mb-2">Failed to load photos</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
@@ -232,14 +236,14 @@ export default function BucketGalleryPanel({
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-gray-600 mb-2">No photos found</p>
-            <p className="text-sm text-gray-500">Complete bucket list items with photos to see them here!</p>
+            <p className="text-sm text-gray-500">
+              Complete bucket list items with photos to see them here!
+            </p>
           </div>
         </div>
       ) : (
         /* Responsive grid - 5 columns on desktop, fewer on smaller screens */
-        <div
-          className="grid gap-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 justify-items-center"
-        >
+        <div className="grid gap-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 justify-items-center">
           {tiles.map((p) => (
             <div
               key={p.id}

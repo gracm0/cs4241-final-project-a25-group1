@@ -2,13 +2,17 @@ import { BucketItem } from "../models/bucketItem";
 
 // get all bucket items for a user, bucket number, and done status
 export async function getItems(email: string, bucketNumber: number) {
-  const items = await BucketItem.find({ email, bucketNumber }).sort({ createdAt: -1 });
+  const items = await BucketItem.find({ email, bucketNumber }).sort({
+    createdAt: -1,
+  });
   return items;
 }
 
 // get all completed bucket items for a user
 export async function getAllDoneItems(email: string) {
-  const items = await BucketItem.find({ email, done: true }).sort({ createdAt: -1 });
+  const items = await BucketItem.find({ email, done: true }).sort({
+    createdAt: -1,
+  });
   return items;
 }
 
@@ -29,15 +33,27 @@ export async function saveItem(data: any) {
 }
 
 // delete a bucket item by email, bucket ID, and title
-export async function deleteItem(email: string, bucketNumber: number, _id: string) {
-  const deleted = await BucketItem.findOneAndDelete({ _id, email, bucketNumber });
+export async function deleteItem(
+  email: string,
+  bucketNumber: number,
+  _id: string
+) {
+  const deleted = await BucketItem.findOneAndDelete({
+    _id,
+    email,
+    bucketNumber,
+  });
   if (!deleted) return { success: false, message: "Item not found" };
   return { success: true };
 }
 
 // get bucket title for a specific bucket
 export async function getBucketTitle(email: string, bucketNumber: number) {
-  const item = await BucketItem.findOne({ email, bucketNumber, bucketTitle: { $exists: true, $ne: "" } }).select('bucketTitle');
+  const item = await BucketItem.findOne({
+    email,
+    bucketNumber,
+    bucketTitle: { $exists: true, $ne: "" },
+  }).select("bucketTitle");
   return item?.bucketTitle || "";
 }
 
@@ -45,23 +61,29 @@ export async function getBucketTitle(email: string, bucketNumber: number) {
 export async function getAllBucketTitles(email: string) {
   const buckets = await BucketItem.aggregate([
     { $match: { email, bucketTitle: { $exists: true, $ne: "" } } },
-    { $group: { _id: "$bucketNumber", bucketTitle: { $first: "$bucketTitle" } } },
-    { $sort: { _id: 1 } }
+    {
+      $group: { _id: "$bucketNumber", bucketTitle: { $first: "$bucketTitle" } },
+    },
+    { $sort: { _id: 1 } },
   ]);
-  
+
   // Initialize array with empty strings for buckets 1-4
   const titles = ["", "", "", ""];
-  buckets.forEach(bucket => {
+  buckets.forEach((bucket) => {
     if (bucket._id >= 1 && bucket._id <= 4) {
       titles[bucket._id - 1] = bucket.bucketTitle;
     }
   });
-  
+
   return titles;
 }
 
-// update all related items with new bucket title 
-export async function updateManyItems(email: string, bucketNumber: number, bucketTitle: string) {
+// update all related items with new bucket title
+export async function updateManyItems(
+  email: string,
+  bucketNumber: number,
+  bucketTitle: string
+) {
   const modified = await BucketItem.updateMany(
     { email, bucketNumber },
     { $set: { bucketTitle } }

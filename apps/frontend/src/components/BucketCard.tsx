@@ -17,19 +17,27 @@ const COLORS = {
   green: "#00AF54",
 };
 
-export const PRIORITY_OPTS: Array<{ key: "high" | "med" | "low"; color: string; title: string }> = [
-  { key: "med",  color: COLORS.yellow, title: "Medium (Yellow)" },
-  { key: "high", color: COLORS.pink,   title: "High (Pink)" },
-  { key: "low",  color: COLORS.green,  title: "Low (Green)" },
+export const PRIORITY_OPTS: Array<{
+  key: "high" | "med" | "low";
+  color: string;
+  title: string;
+}> = [
+  { key: "med", color: COLORS.yellow, title: "Medium (Yellow)" },
+  { key: "high", color: COLORS.pink, title: "High (Pink)" },
+  { key: "low", color: COLORS.green, title: "Low (Green)" },
 ];
 
 const cardTint = (p: Priority): string => {
   const eff = p === "" ? "med" : p;
   switch (eff) {
-    case "high": return "#FFE0E6";
-    case "med":  return "#FFF5CC";
-    case "low":  return "#CCF3DB";
-    default:     return "#FFF5CC";
+    case "high":
+      return "#FFE0E6";
+    case "med":
+      return "#FFF5CC";
+    case "low":
+      return "#CCF3DB";
+    default:
+      return "#FFF5CC";
   }
 };
 
@@ -44,7 +52,8 @@ export default function BucketCard({
   onEdit: (patch: Partial<BucketItem>) => void;
   onOpenComplete: (onSuccess: () => void) => void;
 }) {
-  const priorityEffective: Priority = item.priority === "" ? "med" : item.priority;
+  const priorityEffective: Priority =
+    item.priority === "" ? "med" : item.priority;
 
   const handleMarkComplete = () => {
     if (!item.done) {
@@ -79,7 +88,7 @@ export default function BucketCard({
             "mt-1 h-8 w-10 mr-2 rounded-full grid place-items-center border-2 justify-center transition",
             item.done
               ? " bg-emerald-600 text-white cursor-not-allowed"
-              : " border-[#302F4D]/65 bg-white/75 hover:bg-white"
+              : " border-[#302F4D]/65 bg-white/75 hover:bg-white",
           ].join(" ")}
         >
           {item.done ? "✓" : ""}
@@ -92,7 +101,7 @@ export default function BucketCard({
             onChange={(e) => onEdit({ title: e.target.value })}
             className={[
               "min-w-[350px] bg-transparent text-[24px] font-bold text-[#302F4D] font-roboto outline-none",
-              item.done ? "line-through opacity-60" : ""
+              item.done ? "line-through opacity-60" : "",
             ].join(" ")}
           />
           <input
@@ -101,7 +110,7 @@ export default function BucketCard({
             onChange={(e) => onEdit({ desc: e.target.value })}
             className={[
               "mt-0.5 min-w-[220px] bg-transparent text-[13px] text-[#302F4D] outline-none",
-              item.done ? "line-through opacity-60" : ""
+              item.done ? "line-through opacity-60" : "",
             ].join(" ")}
           />
         </div>
@@ -111,7 +120,9 @@ export default function BucketCard({
       <div className="flex items-start gap-2.5">
         <div className=" px-5 py-3">
           <div className="mt-1 flex items-center gap-2.5">
-            <span className="min-w-[64px] font-medium text-[12px] text-[#302F4D]">Location:</span>
+            <span className="min-w-[64px] font-medium text-[12px] text-[#302F4D]">
+              Location:
+            </span>
             <input
               placeholder="—"
               value={item.location}
@@ -121,7 +132,9 @@ export default function BucketCard({
           </div>
 
           <div className="mt-2.5 flex items-center gap-2.5">
-            <span className="min-w-[64px] font-medium text-[12px] text-[#302F4D]">Priority:</span>
+            <span className="min-w-[64px] font-medium text-[12px] text-[#302F4D]">
+              Priority:
+            </span>
             <div className="flex gap-2.5">
               {PRIORITY_OPTS.map((opt) => (
                 <button
@@ -130,7 +143,9 @@ export default function BucketCard({
                   title={opt.title}
                   className={[
                     "h-[22px] w-[22px] rounded-full border transition",
-                    priorityEffective === opt.key ? "border-[2px] border-[#302F4D]" : "border-[1px] border-white"
+                    priorityEffective === opt.key
+                      ? "border-[2px] border-[#302F4D]"
+                      : "border-[1px] border-white",
                   ].join(" ")}
                   style={{ backgroundColor: opt.color }}
                 />

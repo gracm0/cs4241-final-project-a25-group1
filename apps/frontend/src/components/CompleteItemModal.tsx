@@ -81,11 +81,14 @@ export default function CompleteItemModal({
       const formData = new FormData();
       formData.append("image", file);
 
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json();
 
       if (data.success && data.url) {
-        setUploadedUrl(data.url); 
+        setUploadedUrl(data.url);
       } else {
         console.error("Upload failed", data);
         alert("Upload failed. Please try again.");
@@ -95,8 +98,8 @@ export default function CompleteItemModal({
       console.error("Upload error", err);
       alert("Upload failed. Please try again.");
       setUploadedUrl(null);
-  } finally {
-    setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,8 +120,13 @@ export default function CompleteItemModal({
 
   const handleSubmit = () => {
     console.log("Submitting:", { dateCompleted, uploadedUrl, photoKind });
-    if (!uploadedUrl) return alert("You need to upload an image!"); 
-    onSubmit({ itemId: item!.id, dateCompleted: dateCompleted || undefined, uploadedUrl, photoKind });
+    if (!uploadedUrl) return alert("You need to upload an image!");
+    onSubmit({
+      itemId: item!.id,
+      dateCompleted: dateCompleted || undefined,
+      uploadedUrl,
+      photoKind,
+    });
     onClose();
   };
 
@@ -164,18 +172,34 @@ export default function CompleteItemModal({
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.15 }}>
-              Ready to Complete <br /> Your <span style={{ color: "#FF5C73" }}>Bucket List</span> Item?
+              Ready to Complete <br /> Your{" "}
+              <span style={{ color: "#FF5C73" }}>Bucket List</span> Item?
             </div>
           </div>
-          <hr style={{ border: 0, borderTop: "2px solid #fad6d9", margin: "10px 0 16px" }} />
+          <hr
+            style={{
+              border: 0,
+              borderTop: "2px solid #fad6d9",
+              margin: "10px 0 16px",
+            }}
+          />
 
           {/* Item info */}
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 20, fontWeight: 800 }}>{item.title}</div>
-            {item.subtitle && <div style={{ fontSize: 14, color: "#444" }}>{item.subtitle}</div>}
+            {item.subtitle && (
+              <div style={{ fontSize: 14, color: "#444" }}>{item.subtitle}</div>
+            )}
           </div>
           {(item.locationName || item.address1 || item.cityStateZip) && (
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 12, textAlign: "left" }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: "#666",
+                marginBottom: 12,
+                textAlign: "left",
+              }}
+            >
               {item.locationName && <div>{item.locationName}</div>}
               {item.address1 && <div>{item.address1}</div>}
               {item.cityStateZip && <div>{item.cityStateZip}</div>}
@@ -183,23 +207,71 @@ export default function CompleteItemModal({
           )}
 
           {/* Date completed */}
-          <label style={{ fontSize: 11, color: "#7a7a7a" }}>date completed</label>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
+          <label style={{ fontSize: 11, color: "#7a7a7a" }}>
+            date completed
+          </label>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
             <input
               placeholder="MM/DD/YYYY"
               value={dateCompleted}
               onChange={(e) => setDateCompleted(e.target.value)}
-              style={{ flex: 1, height: 40, borderRadius: 10, border: "1px solid #f5b7be", background: "#ffe1e5", padding: "0 12px", fontWeight: 600 }}
+              style={{
+                flex: 1,
+                height: 40,
+                borderRadius: 10,
+                border: "1px solid #f5b7be",
+                background: "#ffe1e5",
+                padding: "0 12px",
+                fontWeight: 600,
+              }}
             />
-            <span role="img" aria-label="calendar">📅</span>
+            <span role="img" aria-label="calendar">
+              📅
+            </span>
           </div>
 
           {/* Upload / Camera buttons */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 12 }}>
-            <button onClick={handleUploadClick} style={{ height: 44, padding: "0 16px", borderRadius: 999, border: 0, background: "#e6f0ff", fontWeight: 700, cursor: "pointer" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              justifyContent: "center",
+              marginBottom: 12,
+            }}
+          >
+            <button
+              onClick={handleUploadClick}
+              style={{
+                height: 44,
+                padding: "0 16px",
+                borderRadius: 999,
+                border: 0,
+                background: "#e6f0ff",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
               Upload Image
             </button>
-            <button onClick={handleTakePicture} style={{ height: 44, padding: "0 16px", borderRadius: 999, border: 0, background: "#dff5ff", fontWeight: 700, cursor: "pointer" }}>
+            <button
+              onClick={handleTakePicture}
+              style={{
+                height: 44,
+                padding: "0 16px",
+                borderRadius: 999,
+                border: 0,
+                background: "#dff5ff",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
               Take A Picture
             </button>
           </div>
@@ -208,36 +280,88 @@ export default function CompleteItemModal({
           {uploadedUrl && (
             <div style={{ marginBottom: 12, textAlign: "center" }}>
               <p style={{ fontSize: 12, color: "#666" }}>Uploaded Image:</p>
-              <a href={uploadedUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#007bff", wordBreak: "break-all" }}>
+              <a
+                href={uploadedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 12,
+                  color: "#007bff",
+                  wordBreak: "break-all",
+                }}
+              >
                 {uploadedUrl}
               </a>
-              <img 
-                src={uploadedUrl} 
-                alt="Uploaded" 
-                style={{ marginTop: 6, maxHeight: 120, objectFit: "contain", borderRadius: 8, display: "block", marginLeft: "auto", marginRight: "auto" }} />
+              <img
+                src={uploadedUrl}
+                alt="Uploaded"
+                style={{
+                  marginTop: 6,
+                  maxHeight: 120,
+                  objectFit: "contain",
+                  borderRadius: 8,
+                  display: "block",
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                }}
+              />
             </div>
           )}
 
-
           {/* Confirm / Cancel */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18 }}>
-            <button onClick={onClose} style={{ background: "transparent", border: 0, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: 18,
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                background: "transparent",
+                border: 0,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
             <button
               onClick={handleSubmit}
               disabled={!dateCompleted || !uploadedUrl || loading}
-              style={{ height: 40, padding: "0 16px", borderRadius: 10, border: 0, background: "#7ED957", fontWeight: 800, cursor: "pointer", opacity: (!dateCompleted || !uploadedUrl || loading) ? 0.6 : 1 }}
+              style={{
+                height: 40,
+                padding: "0 16px",
+                borderRadius: 10,
+                border: 0,
+                background: "#7ED957",
+                fontWeight: 800,
+                cursor: "pointer",
+                opacity: !dateCompleted || !uploadedUrl || loading ? 0.6 : 1,
+              }}
             >
               {loading ? "Uploading..." : "Mark Complete"}
             </button>
           </div>
 
           {/* Hidden file input */}
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleFile}
+          />
         </div>
       </div>
 
       {/* Camera modal */}
-      <CameraModal open={showCamera} onClose={() => setShowCamera(false)} onCapture={handleCapture} />
+      <CameraModal
+        open={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handleCapture}
+      />
     </>,
     document.body
   );
@@ -262,7 +386,10 @@ function CameraModal({
 
     (async () => {
       try {
-        const constraints: MediaStreamConstraints = { video: { facingMode: { ideal: "environment" } }, audio: false };
+        const constraints: MediaStreamConstraints = {
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
@@ -275,7 +402,9 @@ function CameraModal({
         }
       } catch (err) {
         console.error("Camera error:", err);
-        alert("Could not access camera. Please allow camera permissions or upload instead.");
+        alert(
+          "Could not access camera. Please allow camera permissions or upload instead."
+        );
         onClose();
       }
     })();
@@ -298,19 +427,82 @@ function CameraModal({
     canvas.height = h;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(video, 0, 0, w, h);
-    const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+    const blob = await new Promise<Blob>((res) =>
+      canvas.toBlob((b) => res(b!), "image/jpeg", 0.92)
+    );
     onCapture(blob);
   };
 
   return createPortal(
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 10000 }} />
-      <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", zIndex: 10001, padding: 16 }}>
-        <div style={{ width: 520, maxWidth: "95vw", background: "#0b0b0b", borderRadius: 16, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
-          <video ref={videoRef} playsInline style={{ width: "100%", display: "block", background: "#000" }} />
-          <div style={{ display: "flex", gap: 12, justifyContent: "space-between", padding: 12 }}>
-            <button onClick={onClose} style={{ border: 0, background: "#fff", borderRadius: 8, padding: "10px 16px", fontWeight: 700, cursor: "pointer" }}>Cancel</button>
-            <button onClick={snap} style={{ border: 0, background: "#7ED957", borderRadius: 999, padding: "10px 18px", fontWeight: 800, cursor: "pointer" }}>Capture</button>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          zIndex: 10000,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "grid",
+          placeItems: "center",
+          zIndex: 10001,
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            width: 520,
+            maxWidth: "95vw",
+            background: "#0b0b0b",
+            borderRadius: 16,
+            overflow: "hidden",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+          }}
+        >
+          <video
+            ref={videoRef}
+            playsInline
+            style={{ width: "100%", display: "block", background: "#000" }}
+          />
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              justifyContent: "space-between",
+              padding: 12,
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                border: 0,
+                background: "#fff",
+                borderRadius: 8,
+                padding: "10px 16px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={snap}
+              style={{
+                border: 0,
+                background: "#7ED957",
+                borderRadius: 999,
+                padding: "10px 18px",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Capture
+            </button>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import { CloudinaryStorage } from "multer-storage-cloudinary"
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import multer from "multer";
 
 cloudinary.config({
@@ -12,7 +12,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => ({
     folder: "uploads", // folder name in Cloudinary
-    allowed_formats: ["jpg", "png", "jpeg"], 
+    allowed_formats: ["jpg", "png", "jpeg"],
     //transform: [{ width: 500, height: 500, crop: "limit" }],
   }),
 });
