@@ -117,13 +117,9 @@ export default function CompleteItemModal({
   };
 
   const handleSubmit = () => {
-    if (!uploadedUrl) return;
-    onSubmit({
-      itemId: item!.id,
-      dateCompleted: dateCompleted || undefined,
-      uploadedUrl,
-      photoKind,
-    });
+    console.log("Submitting:", { dateCompleted, uploadedUrl, photoKind });
+    if (!uploadedUrl) return alert("You need to upload an image!"); 
+    onSubmit({ itemId: item!.id, dateCompleted: dateCompleted || undefined, uploadedUrl, photoKind });
     onClose();
   };
 
