@@ -300,9 +300,73 @@ export default function BucketList() {
   const [completeItem, setCompleteItem] = useState<ModalItem | null>(null);
   const openCompleteFor = (it: BucketItem) => setCompleteItem({ id: it.id, title: it.title, subtitle: it.desc || undefined, locationName: it.location || undefined });
 
-  const handleCompleteSubmit = async (args: { itemId: string; dateCompleted?: string; photo?: File | Blob; photoKind: "upload" | "camera" | null }) => {
-    setItems((xs) => xs.map((x) => (x.id === args.itemId ? { ...x, done: true } : x)));
-    setCompleteItem(null);
+  const handleCompleteSubmit = async (args: { 
+    itemId: string; 
+    dateCompleted?: string; 
+    photo?: File | Blob; 
+    photoKind: "upload" | "camera" | null 
+  }) => {
+    if (!args.photo) {
+      alert("Please upload a photo to complete this item.");
+      return;
+    }
+
+    try {
+      // upload image to server
+      const formData = new FormData();
+      formData.append("image", args.photo);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadData.success || !uploadData.url) {
+        alert("Image upload failed.");
+        return;
+      }
+
+      const imageUrl = uploadData.url;
+
+      if (!completeItem) return;
+      const itemToUpdate = items.find(x => x.id === completeItem.id);
+      if (!itemToUpdate || !user?.email) return;
+
+      // Save item as complete with photo URL
+      setItems((xs) =>
+        xs.map((x) =>
+          x.id === completeItem.id
+            ? { ...x, done: true, image: imageUrl }
+            : x
+        )
+      );
+
+      // Persist to backend
+      await fetch("/api/item-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _id: itemToUpdate._id, 
+          email: user.email,
+          bucketNumber: activeBucket,
+          bucketTitle: listTitle,
+          title: itemToUpdate.title,
+          desc: itemToUpdate.desc,
+          location: itemToUpdate.location,
+          priority: itemToUpdate.priority,
+          done: true,
+          image: imageUrl,
+        }),
+      });
+
+      // close modal
+      setCompleteItem(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to complete item.");
+    }
   };
 
   /* ---------------- actions ---------------- */
