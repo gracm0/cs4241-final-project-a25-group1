@@ -49,11 +49,13 @@ export default function BucketCard({
 
         <div>
           <input
+            placeholder="Start Building Your Bucket"
             value={item.title}
             onChange={(e) => onEdit({ title: e.target.value })}
             className="min-w-[260px] bg-transparent text-[18px] font-extrabold text-neutral-900 outline-none"
           />
           <input
+            placeholder="Add Your Description"
             value={item.desc}
             onChange={(e) => onEdit({ desc: e.target.value })}
             className="mt-0.5 min-w-[220px] bg-transparent text-[13px] text-neutral-700/85 outline-none"

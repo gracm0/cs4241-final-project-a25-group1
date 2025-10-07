@@ -109,12 +109,12 @@ export default function BucketList() {
           `/api/item-action/get-bucket-title?bucketNumber=${activeBucket}&email=${user.email}`
         );
         const data: { bucketTitle: string } = await res.json();
-        const title = data.bucketTitle ?? "New BucketList";
+        const title = data.bucketTitle ?? "";
         setListTitle(title);
         localStorage.setItem(titleKey(activeBucket), title);
       } catch (err) {
         console.error("Failed to fetch bucket title:", err);
-        setListTitle("New Bucket List");
+        setListTitle("");
       }
     };
 
@@ -207,8 +207,8 @@ export default function BucketList() {
 
   const makeDefaultItem = (): BucketItem => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    title: "Start Building Your Bucket",
-    desc: "Add Your Description",
+    title: "",
+    desc: "",
     location: "",
     priority: "",
     done: false,
