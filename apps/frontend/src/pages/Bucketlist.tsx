@@ -381,7 +381,7 @@ export default function BucketList() {
     setItems((xs) =>
         xs.map((x) => (x.id === completeItem.id ? { ...x, done: true } : x))
     );
-
+    
     // 2) Add photo to gallery LS
     try {
       const raw = localStorage.getItem(GALLERY_LS_KEY);
@@ -409,24 +409,9 @@ export default function BucketList() {
 
     // 3) Persist to backend (done + image), keep item locally (no refetch)
     try {
-      const res = await fetch("/api/item-action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          _id: itemToUpdate._id,
-          email: user.email,
-          bucketNumber: activeBucket,
-          bucketTitle: listTitle,
-          title: itemToUpdate.title,
-          desc: itemToUpdate.desc,
-          location: itemToUpdate.location,
-          priority: itemToUpdate.priority,
-          done: true,
-          image: imageUrl,
-        }),
-      });
-
-      // If server returns an _id for a brand-new item, stitch it in
+      const res = await fetch(
+        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}`
+      );
       if (res.ok) {
         const saved = await res.json().catch(() => ({}));
         if (saved && saved._id) {
@@ -441,9 +426,6 @@ export default function BucketList() {
       console.error("Failed to complete item:", err);
       alert("Failed to complete item.");
     }
-
-
-
 
     setCompleteItem(null);
   };
