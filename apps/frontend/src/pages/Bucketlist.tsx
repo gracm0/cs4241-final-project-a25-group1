@@ -95,13 +95,23 @@ export default function BucketList() {
   useEffect(() => {
     if (!user?.email) return;
 
+    // Try to get cached title from localStorage first
+    const cachedTitle = localStorage.getItem(titleKey(activeBucket));
+    if (cachedTitle) {
+      setListTitle(cachedTitle);
+      return; // no need to fetch from server
+    }
+
+    // Otherwise fetch from server
     const fetchTitle = async () => {
       try {
         const res = await fetch(
           `/api/item-action/get-bucket-title?bucketNumber=${activeBucket}&email=${user.email}`
         );
         const data: { bucketTitle: string } = await res.json();
-        setListTitle(data.bucketTitle ?? "New BucketList");
+        const title = data.bucketTitle ?? "New BucketList";
+        setListTitle(title);
+        localStorage.setItem(titleKey(activeBucket), title);
       } catch (err) {
         console.error("Failed to fetch bucket title:", err);
         setListTitle("New Bucket List");
@@ -122,6 +132,7 @@ export default function BucketList() {
 
   const handleBucketTitleChange = (newTitle: string) => {
     setListTitle(newTitle);
+    localStorage.setItem(titleKey(activeBucket), newTitle);
     if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
 
     titleDebounceRef.current = setTimeout(() => {
@@ -138,7 +149,6 @@ export default function BucketList() {
         .then((res) => res.json())
         .then((result) => {
           if (!result.success) console.warn("Bucket title update failed");
-          else console.log(`Updated ${result.modifiedCount} items`);
         })
         .catch((err) => console.error("Failed to update bucket title:", err));
     }, 400);
@@ -192,6 +202,7 @@ export default function BucketList() {
     location: "",
     priority: "",
     done: false,
+    _id: undefined, // not set until saved
   });
 
   useEffect(() => {
@@ -215,13 +226,16 @@ export default function BucketList() {
     setItems((xs) => {
       const remaining = xs.filter((x) => x.id !== iid);
       const toDelete = xs.find((x) => x.id === iid);
-      if (!toDelete) return xs;
+      if (!toDelete || !user?.email) return xs;
 
-      fetch(`/api/item-action?bucketNumber=${activeBucket}&title=${encodeURIComponent(toDelete.title)}`, {
+      fetch(`/api/item-action?email=${user.email}&bucketNumber=${activeBucket}&title=${encodeURIComponent(toDelete.title)}`, {
         method: "DELETE",
-      }).then((res) => res.json()).then((result) => {
-        if (!result.success) console.warn("Delete failed:", result.message);
-      }).catch(console.error);
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (!result.success) console.warn("Delete failed:", result.message);
+        })
+        .catch(console.error);
 
       return remaining.length ? remaining : [makeDefaultItem()];
     });
@@ -234,23 +248,30 @@ export default function BucketList() {
       if (!updatedItem || !user?.email) return xs;
 
       if (editDebounceRef.current[iid]) clearTimeout(editDebounceRef.current[iid]);
-      editDebounceRef.current[iid] = setTimeout(() => {
-        fetch("/api/item-action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: user.email,
-            bucketNumber: activeBucket,
-            bucketTitle: listTitle,
-            title: updatedItem.title,
-            desc: updatedItem.desc,
-            location: updatedItem.location,
-            priority: updatedItem.priority,
-            done: updatedItem.done,
-          }),
-        }).then((res) => res.json())
-          .then((savedItem) => setItems((xs2) => xs2.map((x) => (x.id === iid ? savedItem : x))))
-          .catch(console.error);
+      editDebounceRef.current[iid] = setTimeout(async () => {
+        try {
+          const res = await fetch("/api/item-action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              _id: updatedItem._id, // undefined if new
+              email: user.email,
+              bucketNumber: activeBucket,
+              bucketTitle: listTitle,
+              title: updatedItem.title,
+              desc: updatedItem.desc,
+              location: updatedItem.location,
+              priority: updatedItem.priority,
+              done: updatedItem.done,
+            }),
+          });
+          const savedItem = await res.json();
+          setItems((xs2) =>
+             xs2.map((x) => (x.id === iid ? { ...x, _id: savedItem._id } : x))
+          );
+        } catch (err) {
+          console.error("Failed to save item:", err);
+        }
       }, 400);
 
       return updatedItems;

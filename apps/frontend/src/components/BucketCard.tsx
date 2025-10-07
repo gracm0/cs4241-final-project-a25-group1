@@ -3,6 +3,7 @@ import React from "react";
 export type Priority = "" | "high" | "med" | "low";
 export type BucketItem = {
   id: string;
+  _id?: string; // optional MongoDB ID
   title: string;
   desc: string;
   location: string;

@@ -46,8 +46,8 @@ router.post("/", async (req, res) => {
 // parameters: bucketNumber, title
 router.delete("/", async (req, res) => {
   try {
-    const { bucketNumber, title } = req.query
-    const result = await deleteItem(Number(bucketNumber), title as string);
+    const { email, bucketNumber, title } = req.query
+    const result = await deleteItem(email as string, Number(bucketNumber), title as string);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to delete item" });
