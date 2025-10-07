@@ -102,21 +102,13 @@ export default function BucketList() {
   }
 
   /* ---------------- per-bucket title ---------------- */
-  const titleKey = (n: number) => `bucket:title:${n}`;
   const [listTitle, setListTitle] = useState<string>("");
   const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!user?.email) return;
 
-    // Try to get cached title from localStorage first
-    const cachedTitle = localStorage.getItem(titleKey(activeBucket));
-    if (cachedTitle) {
-      setListTitle(cachedTitle);
-      return; // no need to fetch from server
-    }
-
-    // Otherwise fetch from server
+    // Fetch from server
     const fetchTitle = async () => {
       try {
         const res = await fetch(
@@ -125,7 +117,6 @@ export default function BucketList() {
         const data: { bucketTitle: string } = await res.json();
         const title = data.bucketTitle ?? "";
         setListTitle(title);
-        localStorage.setItem(titleKey(activeBucket), title);
       } catch (err) {
         console.error("Failed to fetch bucket title:", err);
         setListTitle("");
@@ -142,16 +133,40 @@ export default function BucketList() {
     "",
     "",
   ]);
+  
   useEffect(() => {
-    const titles = [1, 2, 3, 4].map((n) => {
-      return localStorage.getItem(titleKey(n)) ?? `Bucket ${n}`;
-    });
-    setSidebarTitles(titles);
-  }, [listTitle, activeBucket]);
+    const fetchAllTitles = async () => {
+      if (!user?.email) return;
+      
+      try {
+        const res = await fetch(
+          `/api/item-action/get-all-bucket-titles?email=${user.email}`
+        );
+        const data: { bucketTitles: string[] } = await res.json();
+        const titles = data.bucketTitles.map((title, index) => 
+          title || `Bucket ${index + 1}`
+        );
+        setSidebarTitles(titles);
+      } catch (err) {
+        console.error("Failed to fetch bucket titles:", err);
+        // Fallback to default titles
+        const titles = [1, 2, 3, 4].map((n) => `Bucket ${n}`);
+        setSidebarTitles(titles);
+      }
+    };
+
+    fetchAllTitles();
+  }, [user?.email, listTitle, activeBucket]);
 
   const handleBucketTitleChange = (newTitle: string) => {
     setListTitle(newTitle);
-    localStorage.setItem(titleKey(activeBucket), newTitle);
+    
+    // Update sidebar titles immediately for better UX
+    setSidebarTitles(prevTitles => {
+      const newTitles = [...prevTitles];
+      newTitles[activeBucket - 1] = newTitle || `Bucket ${activeBucket}`;
+      return newTitles;
+    });
 
     if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
 

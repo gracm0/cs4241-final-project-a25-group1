@@ -35,6 +35,31 @@ export async function deleteItem(email: string, bucketNumber: number, _id: strin
   return { success: true };
 }
 
+// get bucket title for a specific bucket
+export async function getBucketTitle(email: string, bucketNumber: number) {
+  const item = await BucketItem.findOne({ email, bucketNumber, bucketTitle: { $exists: true, $ne: "" } }).select('bucketTitle');
+  return item?.bucketTitle || "";
+}
+
+// get all bucket titles for a user (buckets 1-4)
+export async function getAllBucketTitles(email: string) {
+  const buckets = await BucketItem.aggregate([
+    { $match: { email, bucketTitle: { $exists: true, $ne: "" } } },
+    { $group: { _id: "$bucketNumber", bucketTitle: { $first: "$bucketTitle" } } },
+    { $sort: { _id: 1 } }
+  ]);
+  
+  // Initialize array with empty strings for buckets 1-4
+  const titles = ["", "", "", ""];
+  buckets.forEach(bucket => {
+    if (bucket._id >= 1 && bucket._id <= 4) {
+      titles[bucket._id - 1] = bucket.bucketTitle;
+    }
+  });
+  
+  return titles;
+}
+
 // update all related items with new bucket title 
 export async function updateManyItems(email: string, bucketNumber: number, bucketTitle: string) {
   const modified = await BucketItem.updateMany(
