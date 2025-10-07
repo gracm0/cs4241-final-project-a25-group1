@@ -12,7 +12,6 @@ export type Photo = {
 };
 
 export const GALLERY_LS_KEY = "gallery:all";
-const PRESET_COUNT = 12;
 
 /* ---------- helpers ---------- */
 function formatKey(k: string) {
@@ -129,10 +128,8 @@ export default function BucketGalleryPanel({
     );
   }, [photos, query]);
 
-  const tiles: (Photo | null)[] = useMemo(() => {
-    const used = filtered.slice(0, PRESET_COUNT);
-    const placeholdersNeeded = Math.max(0, PRESET_COUNT - used.length);
-    return [...used, ...Array(placeholdersNeeded).fill(null)];
+  const tiles: Photo[] = useMemo(() => {
+    return filtered; // Show all filtered photos, no limit
   }, [filtered]);
 
   function onDelete(id: string) {
@@ -151,7 +148,7 @@ export default function BucketGalleryPanel({
       <header className="mb-4 flex items-end justify-between">
         <div>
           <p className="text-sm text-black/60">
-            Sorted by completion date • hover tiles for details
+            {filtered.length} photo{filtered.length !== 1 ? 's' : ''} • sorted by completion date • hover tiles for details
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -165,73 +162,64 @@ export default function BucketGalleryPanel({
         </div>
       </header>
 
-      {/* 4x3 fixed grid */}
+      {/* Responsive grid - 5 columns on desktop, fewer on smaller screens */}
       <div
-        className="grid max-w-[920px] gap-7"
-        style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+        className="grid gap-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 justify-items-center"
       >
-        {tiles.map((p, i) =>
-          p ? (
-            <div
-              key={p.id}
-              className="card group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl bg-[#ffdce6] shadow-[0_8px_24px_rgba(0,0,0,.06)]"
-              aria-label={`${p.title}, ${p.date}`}
-            >
-              <img
-                src={p.src}
-                alt={p.title}
-                className="h-full w-full object-cover"
-                onClick={() => setActive(p)}
-                loading="lazy"
-              />
-              <div className="overlay absolute inset-0 grid place-items-center bg-black/60 p-4 opacity-0 transition-opacity duration-200 ease-linear group-hover:opacity-100">
-                <div className="max-h-[80%] max-w-[90%] overflow-auto pr-1 text-left text-white">
-                  <strong className="block text-[16px]">{p.title}</strong>
-                  {p.desc ? (
-                    <div className="mt-1 text-[13px] opacity-95">{p.desc}</div>
-                  ) : null}
-                  <div className="mt-1 text-[12px] opacity-90">
-                    Completed:{" "}
-                    {new Date(p.date || p.createdAt).toLocaleDateString()}
-                  </div>
-
-                  {p.extra && (
-                    <dl className="mt-2">
-                      {Object.entries(p.extra).map(([k, v]) => (
-                        <div
-                          key={k}
-                          className="grid grid-cols-[auto_1fr] items-start gap-2"
-                        >
-                          <dt className="text-[12px] font-semibold opacity-90">
-                            {formatKey(k)}
-                          </dt>
-                          <dd className="text-[12px] opacity-95 break-words">
-                            {String(v)}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
+        {tiles.map((p) => (
+          <div
+            key={p.id}
+            className="card group relative w-[220px] h-[220px] cursor-pointer overflow-hidden rounded-2xl bg-[#ffdce6] shadow-[0_8px_24px_rgba(0,0,0,.06)]"
+            aria-label={`${p.title}, ${p.date}`}
+          >
+            <img
+              src={p.src}
+              alt={p.title}
+              className="h-full w-full object-cover"
+              onClick={() => setActive(p)}
+              loading="lazy"
+            />
+            <div className="overlay absolute inset-0 grid place-items-center bg-black/60 p-4 opacity-0 transition-opacity duration-200 ease-linear group-hover:opacity-100">
+              <div className="max-h-[80%] max-w-[90%] overflow-auto pr-1 text-left text-white">
+                <strong className="block text-[16px]">{p.title}</strong>
+                {p.desc ? (
+                  <div className="mt-1 text-[13px] opacity-95">{p.desc}</div>
+                ) : null}
+                <div className="mt-1 text-[12px] opacity-90">
+                  Completed:{" "}
+                  {new Date(p.date || p.createdAt).toLocaleDateString()}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onDelete(p.id)}
-                  title="Delete"
-                  className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-white/20 text-white"
-                >
-                  ✕
-                </button>
+                {p.extra && (
+                  <dl className="mt-2">
+                    {Object.entries(p.extra).map(([k, v]) => (
+                      <div
+                        key={k}
+                        className="grid grid-cols-[auto_1fr] items-start gap-2"
+                      >
+                        <dt className="text-[12px] font-semibold opacity-90">
+                          {formatKey(k)}
+                        </dt>
+                        <dd className="text-[12px] opacity-95 break-words">
+                          {String(v)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
               </div>
+
+              <button
+                type="button"
+                onClick={() => onDelete(p.id)}
+                title="Delete"
+                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-white/20 text-white"
+              >
+                ✕
+              </button>
             </div>
-          ) : (
-            <div
-              key={`ph-${i}`}
-              aria-hidden
-              className="aspect-square w-full rounded-2xl bg-[#ffdce6] shadow-[inset_0_0_0_2px_rgba(0,0,0,.04)]"
-            />
-          )
-        )}
+          </div>
+        ))}
       </div>
 
       {/* Lightbox */}

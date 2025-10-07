@@ -524,6 +524,20 @@ export default function BucketList() {
   const goGallery = () => nav("/bucket/gallery");
   const goList = () => nav(`/bucket/${activeBucket}`);
 
+  // Control main page scroll when gallery is open
+  useEffect(() => {
+    if (galleryOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [galleryOpen]);
+
   if (loadingUser) return <div>Loading...</div>;
 
   /* ---------------- brand (collapses with sidebar) ---------------- */
@@ -830,7 +844,7 @@ function AnimatedMain({ children }: React.PropsWithChildren) {
 
   return (
       <motion.main
-          className="relative min-h-screen rounded-l-[35px] bg-white p-20 shadow-lg"
+          className="relative h-screen rounded-l-[35px] bg-white p-20 shadow-lg "
           animate={{ marginLeft: gutter }}
           transition={
             animate
