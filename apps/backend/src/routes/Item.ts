@@ -1,7 +1,18 @@
 import { Router } from "express";
-import { getItems, saveItem, deleteItem, updateManyItems } from "../controllers/bucketController";
+import { getItems, saveItem, deleteItem, updateManyItems, getBucketTitle } from "../controllers/bucketController";
 
 const router = Router();
+
+// GET /item-action/get-bucket-title?email={...}&bucketNumber={...}
+router.get("/get-bucket-title", async (req, res) => {
+  try {
+    const { email, bucketNumber } = req.query;
+    const bucketTitle = await getBucketTitle(email as string, Number(bucketNumber));
+    res.json({ bucketTitle });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch bucket title" });
+  }
+});
 
 // assumes calls include required parameters
 

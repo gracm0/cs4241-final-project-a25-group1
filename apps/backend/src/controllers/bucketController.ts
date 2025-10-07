@@ -1,3 +1,9 @@
+// get bucket title for a user and bucket number
+export async function getBucketTitle(email: string, bucketNumber: number) {
+  // Find one item for the user and bucketNumber
+  const item = await BucketItem.findOne({ email, bucketNumber });
+  return item?.bucketTitle || "";
+}
 import { BucketItem } from "../models/bucketItem";
 
 // get all bucket items for a user, bucket number, and done status
