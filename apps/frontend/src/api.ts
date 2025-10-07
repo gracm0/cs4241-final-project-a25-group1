@@ -24,3 +24,22 @@ export function login(email: string, password: string) {
         body: JSON.stringify({ email, password })
     }).then(json);
 }
+
+export function logout() {
+    return fetch(`${BASE}/logout`, {
+        method: "POST",
+        credentials: "include"
+    }).then(json);
+}
+
+export function getCurrentUser() {
+    return fetch(`${BASE}/me`, {
+        credentials: "include"
+    }).then(json);
+}
+
+export function getCompletedItems(email: string) {
+    return fetch(`${BASE}/item-action?email=${encodeURIComponent(email)}&done=true`, {
+        credentials: "include"
+    }).then(json);
+}

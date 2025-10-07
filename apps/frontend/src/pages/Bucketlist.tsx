@@ -20,9 +20,7 @@ import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import friend from "../assets/icons8-person-64.png";
 import trash from "../assets/icons8-trash-can-24.png";
-import BucketGallery, {
-  GALLERY_LS_KEY,
-} from "../components/BucketGalleryPanel";
+import BucketGallery from "../components/BucketGalleryPanel";
 
 interface UserType {
   first: string;
@@ -398,29 +396,9 @@ export default function BucketList() {
         xs.map((x) => (x.id === completeItem.id ? { ...x, done: true } : x))
     );
     
-    // 2) Add photo to gallery LS
-    try {
-      const raw = localStorage.getItem(GALLERY_LS_KEY);
-      const gallery = raw ? JSON.parse(raw) : [];
-      const newPhoto = {
-        id: itemToUpdate.id,
-        title: itemToUpdate.title,
-        desc: itemToUpdate.desc,
-        date: args.dateCompleted || new Date().toISOString().slice(0, 10),
-        src: imageUrl,
-        createdAt: new Date().toISOString(),
-        extra: {
-          location: itemToUpdate.location,
-          priority: itemToUpdate.priority,
-        },
-      };
-      gallery.unshift(newPhoto);
-      localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(gallery));
-      window.dispatchEvent(new Event("gallery:changed"));
-      console.log("Gallery after completion:", gallery);
-    } catch (err) {
-      console.error("Failed to add to gallery:", err);
-    }
+    // Notify the gallery that an item was completed
+    window.dispatchEvent(new Event("gallery:changed"));
+    console.log("Item completed successfully, gallery notified");
 
 
     // 3) Persist to backend (done + image), keep item locally (no refetch)

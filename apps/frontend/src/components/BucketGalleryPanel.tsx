@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import * as api from "../api";
 
 /* ---------- types ---------- */
 export type Photo = {
@@ -11,8 +12,6 @@ export type Photo = {
   extra?: Record<string, string | number | boolean | null>;
 };
 
-export const GALLERY_LS_KEY = "gallery:all";
-
 /* ---------- helpers ---------- */
 function formatKey(k: string) {
   return k
@@ -21,31 +20,29 @@ function formatKey(k: string) {
     .replace(/\b\w/g, (s) => s.toUpperCase());
 }
 
-function readGallery(): Photo[] {
-  try {
-    const raw = localStorage.getItem(GALLERY_LS_KEY);
-    const arr = raw ? (JSON.parse(raw) as any[]) : [];
-    return arr.map((p) => ({
-      id: p.id ?? crypto.randomUUID(),
-      title: p.title ?? "",
-      desc: p.desc ?? undefined,
-      src: p.src ?? p.uploadedUrl ?? "",
-      date:
-        p.date ??
-        p.dateCompleted ??
-        new Date(p.createdAt ?? Date.now()).toISOString().slice(0, 10),
-      createdAt: p.createdAt ?? new Date().toISOString(),
-      extra: p.extra ?? (p.photokind ? { photokind: p.photokind } : undefined),
-    })) as Photo[];
-  } catch {
-    return [];
+// Transform bucket item to photo format
+function transformBucketItemToPhoto(item: any): Photo | null {
+  // Only include items that have images and are completed
+  if (!item.image || !item.done) {
+    return null;
   }
-}
 
-function writeGallery(next: Photo[]) {
-  try {
-    localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(next));
-  } catch {}
+  return {
+    id: item.id || item._id,
+    title: item.title || "Untitled",
+    desc: item.desc || undefined,
+    src: item.image,
+    date: item.completedAt 
+      ? new Date(item.completedAt).toISOString().slice(0, 10)
+      : new Date(item.createdAt).toISOString().slice(0, 10),
+    createdAt: item.createdAt || new Date().toISOString(),
+    extra: {
+      location: item.location || "",
+      priority: item.priority || "",
+      bucketNumber: item.bucketNumber || "",
+      bucketTitle: item.bucketTitle || "",
+    },
+  };
 }
 
 export default function BucketGalleryPanel({
@@ -59,50 +56,86 @@ export default function BucketGalleryPanel({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Photo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
+  // Get current user and their photos
   useEffect(() => {
-    setPhotos(readGallery());
-  }, []);
-
-  // Debugging
-  useEffect(() => {
-    console.log("BucketGalleryPanel photos:", photos);
-  }, [photos]);
-
-  useEffect(() => {
-    function reload() {
-      setPhotos(readGallery());
-    }
-    window.addEventListener("focus", reload);
-    return () => window.removeEventListener("focus", reload);
-  }, []);
-
-  // Cross-tab sync
-  useEffect(() => {
-    function onStorage(e: StorageEvent) {
-      if (e.key === GALLERY_LS_KEY) {
-        setPhotos(readGallery());
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log("Fetching current user...");
+        // Get current user
+        const response = await api.getCurrentUser() as { user: { email: string; first: string; last: string } };
+        console.log("Current user response:", response);
+        setUserEmail(response.user.email);
+        
+        console.log("Fetching completed items for:", response.user.email);
+        // Get completed items with images
+        const items = await api.getCompletedItems(response.user.email) as any[];
+        console.log("Completed items response:", items);
+        
+        // Transform items to photos
+        const transformedPhotos = items
+          .map(transformBucketItemToPhoto)
+          .filter((photo: Photo | null): photo is Photo => photo !== null);
+        
+        console.log("Transformed photos:", transformedPhotos);
+        setPhotos(transformedPhotos);
+      } catch (err) {
+        console.error("Failed to fetch photos:", err);
+        setError(err instanceof Error ? err.message : "Failed to load photos");
+      } finally {
+        setLoading(false);
       }
     }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+
+    fetchData();
   }, []);
 
-  // Same-tab sync (BucketList dispatches this after saving)
+  // Refresh photos when window gains focus
   useEffect(() => {
-    function onSameTabChange() {
-      setPhotos(readGallery());
+    async function reload() {
+      if (!userEmail) return;
+      
+      try {
+        const items = await api.getCompletedItems(userEmail) as any[];
+        const transformedPhotos = items
+          .map(transformBucketItemToPhoto)
+          .filter((photo: Photo | null): photo is Photo => photo !== null);
+        setPhotos(transformedPhotos);
+      } catch (err) {
+        console.error("Failed to refresh photos:", err);
+      }
     }
-    window.addEventListener(
-      "gallery:changed",
-      onSameTabChange as EventListener
-    );
+    
+    window.addEventListener("focus", reload);
+    return () => window.removeEventListener("focus", reload);
+  }, [userEmail]);
+
+  // Listen for bucket list updates
+  useEffect(() => {
+    async function onBucketUpdate() {
+      if (!userEmail) return;
+      
+      try {
+        const items = await api.getCompletedItems(userEmail) as any[];
+        const transformedPhotos = items
+          .map(transformBucketItemToPhoto)
+          .filter((photo: Photo | null): photo is Photo => photo !== null);
+        setPhotos(transformedPhotos);
+      } catch (err) {
+        console.error("Failed to refresh photos:", err);
+      }
+    }
+    
+    window.addEventListener("gallery:changed", onBucketUpdate as EventListener);
     return () =>
-      window.removeEventListener(
-        "gallery:changed",
-        onSameTabChange as EventListener
-      );
-  }, []);
+      window.removeEventListener("gallery:changed", onBucketUpdate as EventListener);
+  }, [userEmail]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -134,13 +167,18 @@ export default function BucketGalleryPanel({
 
   function onDelete(id: string) {
     if (!confirm("Delete this photo?")) return;
+    
+    // For now, we'll just remove it from the local state
+    // In a full implementation, you might want to add a delete API endpoint
     setPhotos((prev) => {
       const next = prev.filter((p) => p.id !== id);
-      writeGallery(next); // persist only here
-      window.dispatchEvent(new Event("gallery:changed")); // notify others
       return next;
     });
+    
     if (active?.id === id) setActive(null);
+    
+    // Notify other components that the gallery changed
+    window.dispatchEvent(new Event("gallery:changed"));
   }
 
   return (
@@ -148,8 +186,16 @@ export default function BucketGalleryPanel({
       <header className="mb-4 flex items-end justify-between">
         <div>
           <p className="text-sm text-black/60">
-            {filtered.length} photo{filtered.length !== 1 ? 's' : ''} • sorted by completion date • hover tiles for details
+            {loading 
+              ? "Loading photos..." 
+              : `${filtered.length} photo${filtered.length !== 1 ? 's' : ''} • sorted by completion date • hover tiles for details`
+            }
           </p>
+          {error && (
+            <p className="text-sm text-red-600 mt-1">
+              {error}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -157,70 +203,99 @@ export default function BucketGalleryPanel({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search photos…"
             aria-label="Search photos"
-            className="min-w-[240px] rounded-xl border border-gray-200 bg-[#fafafa] px-3 py-2 outline-none"
+            disabled={loading}
+            className="min-w-[240px] rounded-xl border border-gray-200 bg-[#fafafa] px-3 py-2 outline-none disabled:opacity-50"
           />
         </div>
       </header>
 
-      {/* Responsive grid - 5 columns on desktop, fewer on smaller screens */}
-      <div
-        className="grid gap-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 justify-items-center"
-      >
-        {tiles.map((p) => (
-          <div
-            key={p.id}
-            className="card group relative w-[220px] h-[220px] cursor-pointer overflow-hidden rounded-2xl bg-[#ffdce6] shadow-[0_8px_24px_rgba(0,0,0,.06)]"
-            aria-label={`${p.title}, ${p.date}`}
-          >
-            <img
-              src={p.src}
-              alt={p.title}
-              className="h-full w-full object-cover"
-              onClick={() => setActive(p)}
-              loading="lazy"
-            />
-            <div className="overlay absolute inset-0 grid place-items-center bg-black/60 p-4 opacity-0 transition-opacity duration-200 ease-linear group-hover:opacity-100">
-              <div className="max-h-[80%] max-w-[90%] overflow-auto pr-1 text-left text-white">
-                <strong className="block text-[16px]">{p.title}</strong>
-                {p.desc ? (
-                  <div className="mt-1 text-[13px] opacity-95">{p.desc}</div>
-                ) : null}
-                <div className="mt-1 text-[12px] opacity-90">
-                  Completed:{" "}
-                  {new Date(p.date || p.createdAt).toLocaleDateString()}
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+            <p className="text-gray-600">Loading your photos...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">Failed to load photos</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : tiles.length === 0 ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-gray-600 mb-2">No photos found</p>
+            <p className="text-sm text-gray-500">Complete bucket list items with photos to see them here!</p>
+          </div>
+        </div>
+      ) : (
+        /* Responsive grid - 5 columns on desktop, fewer on smaller screens */
+        <div
+          className="grid gap-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 justify-items-center"
+        >
+          {tiles.map((p) => (
+            <div
+              key={p.id}
+              className="card group relative w-[220px] h-[220px] cursor-pointer overflow-hidden rounded-2xl bg-[#ffdce6] shadow-[0_8px_24px_rgba(0,0,0,.06)]"
+              aria-label={`${p.title}, ${p.date}`}
+            >
+              <img
+                src={p.src}
+                alt={p.title}
+                className="h-full w-full object-cover"
+                onClick={() => setActive(p)}
+                loading="lazy"
+              />
+              <div className="overlay absolute inset-0 grid place-items-center bg-black/60 p-4 opacity-0 transition-opacity duration-200 ease-linear group-hover:opacity-100">
+                <div className="max-h-[80%] max-w-[90%] overflow-auto pr-1 text-left text-white">
+                  <strong className="block text-[16px]">{p.title}</strong>
+                  {p.desc ? (
+                    <div className="mt-1 text-[13px] opacity-95">{p.desc}</div>
+                  ) : null}
+                  <div className="mt-1 text-[12px] opacity-90">
+                    Completed:{" "}
+                    {new Date(p.date || p.createdAt).toLocaleDateString()}
+                  </div>
+
+                  {p.extra && (
+                    <dl className="mt-2">
+                      {Object.entries(p.extra).map(([k, v]) => (
+                        <div
+                          key={k}
+                          className="grid grid-cols-[auto_1fr] items-start gap-2"
+                        >
+                          <dt className="text-[12px] font-semibold opacity-90">
+                            {formatKey(k)}
+                          </dt>
+                          <dd className="text-[12px] opacity-95 break-words">
+                            {String(v)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
                 </div>
 
-                {p.extra && (
-                  <dl className="mt-2">
-                    {Object.entries(p.extra).map(([k, v]) => (
-                      <div
-                        key={k}
-                        className="grid grid-cols-[auto_1fr] items-start gap-2"
-                      >
-                        <dt className="text-[12px] font-semibold opacity-90">
-                          {formatKey(k)}
-                        </dt>
-                        <dd className="text-[12px] opacity-95 break-words">
-                          {String(v)}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onDelete(p.id)}
+                  title="Delete"
+                  className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-white/20 text-white"
+                >
+                  ✕
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => onDelete(p.id)}
-                title="Delete"
-                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-white/30 bg-white/20 text-white"
-              >
-                ✕
-              </button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Lightbox */}
       {active && (

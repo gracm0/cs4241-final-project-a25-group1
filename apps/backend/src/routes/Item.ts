@@ -5,45 +5,41 @@ const router = Router();
 
 // assumes calls include required parameters
 
-// GET /item-action?email={...}&bucketNumber={...}&doneQuery={...}
-// parameters: email, bucketNumber, doneQuery (true/false)
+// GET /item-action?email={...}&bucketNumber={...}
+// GET /item-action?email={...}&done=true (for completed items)
 router.get("/", async (req, res) => {
   try {
-    const { email, bucketNumber} = req.query;
-    const items = await getItems(email as string, Number(bucketNumber));
-    // Ensure each item has an 'id' property for React key
-    const itemsWithId = items.map((item: any) => ({
-      ...item.toObject(),
-      id: item._id.toString(),
-    }));
-    res.json(itemsWithId);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch items" });
-  }
-});
+    const { email, bucketNumber, done } = req.query;
+    
+    if (done === 'true') {
+      // Fetch all completed items for the user
+      const items = await getAllDoneItems(email as string);
+      
+      console.log("Fetched completed items:", items); // <-- debug
 
-// GET /item-action?email={...}
-// parameters: email
-// done: true
-router.get("/", async (req, res) => {
-  try {
-    const { email } = req.query;
-    const items = await getAllDoneItems(email as string);
+      if (!Array.isArray(items)) {
+        console.error("getAllDoneItems did not return an array");
+        return res.status(500).json({ error: "Invalid return from getAllDoneItems" });
+      }
 
-    console.log("Fetched items:", items); // <-- debug
-
-    if (!Array.isArray(items)) {
-      console.error("getAllDoneItems did not return an array");
-      return res.status(500).json({ error: "Invalid return from getAllDoneItems" });
+      const itemsWithId = items.map((item: any) => ({
+        ...item.toObject(),
+        id: item._id.toString(),
+      }));
+      return res.json(itemsWithId);
+    } else {
+      // Fetch items for specific bucket
+      const items = await getItems(email as string, Number(bucketNumber));
+      // Ensure each item has an 'id' property for React key
+      const itemsWithId = items.map((item: any) => ({
+        ...item.toObject(),
+        id: item._id.toString(),
+      }));
+      return res.json(itemsWithId);
     }
-
-    const itemsWithId = items.map((item: any) => ({
-      ...item.toObject(),
-      id: item._id.toString(),
-    }));
-    res.json(itemsWithId);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch completed items" });
+    console.error("Error fetching items:", err);
+    res.status(500).json({ error: "Failed to fetch items" });
   }
 });
 
