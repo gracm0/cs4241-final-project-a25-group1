@@ -133,24 +133,34 @@ export default function BucketList() {
   const handleBucketTitleChange = (newTitle: string) => {
     setListTitle(newTitle);
     localStorage.setItem(titleKey(activeBucket), newTitle);
+
     if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
 
-    titleDebounceRef.current = setTimeout(() => {
+    titleDebounceRef.current = setTimeout(async () => {
       if (!user?.email) return;
-      fetch("/item-action/update-bucket-title", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: user.email,
-          bucketNumber: activeBucket,
-          bucketTitle: newTitle,
-        }),
-      })
-        .then((res) => res.json())
-        .then((result) => {
-          if (!result.success) console.warn("Bucket title update failed");
-        })
-        .catch((err) => console.error("Failed to update bucket title:", err));
+
+      try {
+        const res = await fetch("/api/item-action/update-bucket-title", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.email,
+            bucketNumber: activeBucket,
+            bucketTitle: newTitle,
+          }),
+        });
+        const result = await res.json();
+
+        if (!result.success) console.warn("Bucket title update failed");
+
+        // **Optional:** update local state for all items
+        setItems((prevItems) =>
+          prevItems.map((item) => ({ ...item, bucketTitle: newTitle }))
+        );
+
+      } catch (err) {
+        console.error("Failed to update bucket title:", err);
+      }
     }, 400);
   };
 
