@@ -57,29 +57,29 @@ export default function BucketCard({
 
   return (
     <section
-      className="relative flex items-stretch justify-between rounded-2xl p-4 max-w-[780px] shadow-lg"
+      className="relative flex items-stretch justify-between rounded-2xl p-4 max-w-[780px] shadow-md"
       style={{ backgroundColor: cardTint(item.priority) }}
     >
       {/* DELETE */}
       <button
         title="Delete"
         onClick={onDelete}
-        className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/20 text-white hover:bg-black/30 transition"
+        className="absolute right-2 top-2 grid h-6 w-6 place-items-center font-bold text-[#302F4D]/65"
       >
         ✕
       </button>
 
       {/* LEFT: toggle + text */}
-      <div className="flex items-start gap-3.5">
+      <div className="flex items-center gap-3.5">
         {/* Circular complete toggle */}
         <button
           onClick={handleMarkComplete}
           disabled={item.done} // once done, disable forever
           className={[
-            "mt-1 h-8 w-8 rounded-full border-2 grid place-items-center transition",
+            "mt-1 h-8 w-10 mr-2 rounded-full grid place-items-center border-2 justify-center transition",
             item.done
-              ? "border-emerald-600 bg-emerald-600 text-white cursor-not-allowed"
-              : "border-black/30 bg-white/60 hover:bg-white"
+              ? " bg-emerald-600 text-white cursor-not-allowed"
+              : " border-[#302F4D]/65 bg-white/75 hover:bg-white"
           ].join(" ")}
         >
           {item.done ? "✓" : ""}
@@ -91,7 +91,7 @@ export default function BucketCard({
             value={item.title}
             onChange={(e) => onEdit({ title: e.target.value })}
             className={[
-              "min-w-[260px] bg-transparent text-[18px] font-extrabold text-neutral-900 outline-none",
+              "min-w-[350px] bg-transparent text-[24px] font-bold text-[#302F4D] font-roboto outline-none",
               item.done ? "line-through opacity-60" : ""
             ].join(" ")}
           />
@@ -100,7 +100,7 @@ export default function BucketCard({
             value={item.desc}
             onChange={(e) => onEdit({ desc: e.target.value })}
             className={[
-              "mt-0.5 min-w-[220px] bg-transparent text-[13px] text-neutral-700/85 outline-none",
+              "mt-0.5 min-w-[220px] bg-transparent text-[13px] text-[#302F4D] outline-none",
               item.done ? "line-through opacity-60" : ""
             ].join(" ")}
           />
@@ -109,9 +109,9 @@ export default function BucketCard({
 
       {/* RIGHT: location + priority */}
       <div className="flex items-start gap-2.5">
-        <div className="rounded-[14px] bg-white/55 px-3 py-2.5">
+        <div className=" px-5 py-3">
           <div className="mt-1 flex items-center gap-2.5">
-            <span className="min-w-[64px] text-[12px] text-black/70">Location:</span>
+            <span className="min-w-[64px] font-medium text-[12px] text-[#302F4D]">Location:</span>
             <input
               placeholder="—"
               value={item.location}
@@ -121,7 +121,7 @@ export default function BucketCard({
           </div>
 
           <div className="mt-2.5 flex items-center gap-2.5">
-            <span className="min-w-[64px] text-[12px] text-black/70">Priority:</span>
+            <span className="min-w-[64px] font-medium text-[12px] text-[#302F4D]">Priority:</span>
             <div className="flex gap-2.5">
               {PRIORITY_OPTS.map((opt) => (
                 <button
@@ -130,7 +130,7 @@ export default function BucketCard({
                   title={opt.title}
                   className={[
                     "h-[22px] w-[22px] rounded-full border transition",
-                    priorityEffective === opt.key ? "border-[3px] border-gray-800" : "border-[2px] border-gray-300"
+                    priorityEffective === opt.key ? "border-[2px] border-[#302F4D]" : "border-[1px] border-white"
                   ].join(" ")}
                   style={{ backgroundColor: opt.color }}
                 />

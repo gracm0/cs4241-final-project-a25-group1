@@ -2,7 +2,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
-import BucketList from "./pages/Bucketlist"; // <- all-in-one page
+import BucketList from "./pages/Bucketlist"; 
 
 export default function App() {
     return (

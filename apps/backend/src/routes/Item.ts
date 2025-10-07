@@ -10,10 +10,14 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const { email, bucketNumber, doneQuery } = req.query;
-    const done = doneQuery === "true" ? true : false; // convert to boolean
+    const done = doneQuery === "true" ? true : false; 
     const items = await getItems(email as string, Number(bucketNumber), done);
-
-    res.json(items);
+    // Ensure each item has an 'id' property for React key
+    const itemsWithId = items.map((item: any) => ({
+      ...item.toObject(),
+      id: item._id.toString(),
+    }));
+    res.json(itemsWithId);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch items" });
   }
@@ -46,8 +50,8 @@ router.post("/", async (req, res) => {
 // parameters: bucketNumber, title
 router.delete("/", async (req, res) => {
   try {
-    const { email, bucketNumber, title } = req.query
-    const result = await deleteItem(email as string, Number(bucketNumber), title as string);
+  const { email, bucketNumber, id } = req.query;
+  const result = await deleteItem(email as string, Number(bucketNumber), id as string);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to delete item" });

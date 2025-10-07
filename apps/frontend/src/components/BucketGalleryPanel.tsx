@@ -31,7 +31,22 @@ export default function BucketGalleryPanel({
   style?: React.CSSProperties;
   title?: string;
 }) {
+  // Always reload gallery when window regains focus
+  useEffect(() => {
+    function reloadGallery() {
+      try {
+        const raw = localStorage.getItem(GALLERY_LS_KEY);
+        if (raw) setPhotos(JSON.parse(raw));
+      } catch {}
+    }
+    window.addEventListener("focus", reloadGallery);
+    return () => window.removeEventListener("focus", reloadGallery);
+  }, []);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  // Debug: log loaded photos
+  useEffect(() => {
+    console.log('BucketGalleryPanel photos:', photos);
+  }, [photos]);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Photo | null>(null);
 

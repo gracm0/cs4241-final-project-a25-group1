@@ -19,6 +19,7 @@ import BucketCard, { Priority, BucketItem } from "../components/BucketCard";
 import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import BucketGallery from "../components/BucketGalleryPanel";
+import friend from "../assets/icons8-person-64.png";
 
 interface UserType {
   first: string;
@@ -278,11 +279,7 @@ export default function BucketList() {
       if (!toDelete || !user?.email) return xs;
 
       fetch(
-        `/api/item-action?email=${
-          user.email
-        }&bucketNumber=${activeBucket}&title=${encodeURIComponent(
-          toDelete.title
-        )}`,
+        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}&id=${toDelete.id}`,
         {
           method: "DELETE",
         }
@@ -366,7 +363,14 @@ export default function BucketList() {
       return;
     }
 
-    const imageUrl = args.uploadedUrl;
+    // Only use the final image URL (not a blob: URL)
+    let imageUrl = args.uploadedUrl;
+    // If it's a blob: URL, try to get the final URL from localStorage (CompleteItemModal should set this after upload)
+    if (imageUrl.startsWith('blob:')) {
+      // fallback: do not add to gallery if not a real URL
+      alert('Image upload did not complete. Please wait for the upload to finish.');
+      return;
+    }
 
     // Find the item and mark it done
     if (!completeItem) return;
@@ -375,6 +379,32 @@ export default function BucketList() {
 
     // optimistically remove
     setItems(xs => xs.filter(x => x.id !== completeItem.id));
+
+    // Add to gallery in localStorage
+    try {
+      const GALLERY_LS_KEY = "gallery:all";
+      const raw = localStorage.getItem(GALLERY_LS_KEY);
+      const gallery = raw ? JSON.parse(raw) : [];
+      const newPhoto = {
+        id: itemToUpdate.id,
+        title: itemToUpdate.title,
+        desc: itemToUpdate.desc,
+        date: args.dateCompleted || new Date().toISOString().slice(0,10),
+        src: imageUrl,
+        createdAt: new Date().toISOString(),
+        extra: {
+          location: itemToUpdate.location,
+          priority: itemToUpdate.priority,
+        },
+      };
+      gallery.unshift(newPhoto);
+  localStorage.setItem(GALLERY_LS_KEY, JSON.stringify(gallery));
+  // Trigger storage event so gallery updates in same tab
+  window.dispatchEvent(new StorageEvent('storage', { key: GALLERY_LS_KEY, newValue: JSON.stringify(gallery) }));
+  console.log('Gallery after completion:', gallery);
+    } catch (err) {
+      console.error("Failed to add to gallery:", err);
+    }
 
     // persist to backend
     try {
@@ -499,52 +529,49 @@ export default function BucketList() {
             }}
           />
 
-          {/* Profile + Logout */}
+          {/* Profile + Logout as SidebarLink */}
+          <SidebarLink
+            link={{
+              href: "#",
+              label: displayName,
+              icon: (
+                <span className="flex items-center justify-center h-[38px] w-[38px] min-w-[38px] min-h-[38px] rounded-full bg-[#FF99A7] font-medium text-white text-center text-xl transition-none">
+                  {displayName.charAt(0).toUpperCase()}
+                </span>
+              ),
+            }}
+            className="mb-2 overflow-hidden whitespace-nowrap px-2 font-roboto font-medium text-[#302F4D] ml-2"
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+              e.preventDefault();
+              setShowProfile((s) => !s);
+            }}
+          />
+        {showProfile && (
           <div
-            ref={profileRef}
-            className="relative ml-3 mb-3 justify-center"
+            role="menu"
+              className="absolute left-1/4 mb-2 -translate-x-1/5 translate-y-[620px] z-80 min-w-[100px] flex flex-col items-center"
           >
             <button
-              onClick={() => setShowProfile((s) => !s)}
-              title="Profile"
-              aria-haspopup="menu"
-              aria-expanded={showProfile ? true : false}
-              className="flex items-center justify-center h-[48px] w-[48px] rounded-full bg-[#FF99A7] font-medium text-white text-center text-xl"
+              type="button"
+              onClick={handleLogout}
+              className="w-full rounded-full bg-[#0092E0] px-3 py-2 text-xs font-bold text-white"
             >
-              {displayName.charAt(0).toUpperCase()}
+              Log Out
             </button>
-
-            {showProfile && (
-              <div
-                role="menu"
-                className="absolute left-[75px] top-1/2 translate-y-[10px] z-80 w-30 rounded-xl bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.12)]"
-              >
-                <div className="mb-2 text-center text-sm font-semibold text-neutral-800">
-                  {displayName}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full rounded-lg bg-[#ff4f9a] px-6 py-2 text-sm text-white"
-                >
-                  Log Out
-                </button>
-              </div>
-            )}
           </div>
+        )}
         </SidebarBody>
 
         {/* Animated main that condenses/expands with the sidebar */}
         <AnimatedMain>
-          {/* Header: title left, collab controls right */}
           {galleryOpen ? (
             <div className="mb-6 flex items-center justify-between">
-              <h1 className="text-[42px] font-bold font-roboto leading-none text-[#302F4D]">
+              <h1 className="text-[42px] font-extrabold font-roboto leading-none text-[#302F4D]">
                 All Buckets Gallery
               </h1>
             </div>
           ) : (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <input
                 value={listTitle}
                 onChange={(e) => handleBucketTitleChange(e.target.value)}
@@ -565,14 +592,14 @@ export default function BucketList() {
                   </Avatar>
                 ))}
                 {!canAddMore && (
-                  <span className="text-xs opacity-70">(Max 4)</span>
+                  <span className="opacity-70">(Max 4)</span>
                 )}
                 <button
                   title="Invite collaborators (max 4)"
                   onClick={() => setInviteOpen(true)}
-                  className="ml-2 grid h-10 w-10 place-items-center rounded-full bg-[#ff4f9a] text-2xl text-white shadow-[0_10px_24px_rgba(255,79,154,0.35)]"
+                  className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#FF99A7]"
                 >
-                  +
+                  <img src={friend} alt="Invite" className="h-6 w-6" />
                 </button>
               </div>
             </div>
@@ -599,7 +626,7 @@ export default function BucketList() {
               <button
                 title="Add new item"
                 onClick={addItem}
-                className="fixed bottom-[38px] right-[46px] grid h-[60px] w-[60px] place-items-center rounded-full bg-[#ff4f9a] text-[36px] text-white shadow-[0_14px_28px_rgba(255,79,154,0.35)]"
+                className="fixed bottom-[50px] right-[75px] grid h-[60px] w-[60px] place-items-center rounded-full bg-[#FF99A7] text-[36px] text-white"
               >
                 ＋
               </button>
@@ -716,7 +743,7 @@ function AnimatedMain({ children }: React.PropsWithChildren) {
 
   return (
     <motion.main
-      className="relative min-h-screen rounded-l-3xl bg-white p-12 shadow-lg"
+      className="relative min-h-screen rounded-l-[35px] bg-white p-20 shadow-lg"
       animate={{ marginLeft: gutter }}
       transition={
         animate

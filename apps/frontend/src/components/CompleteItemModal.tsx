@@ -26,7 +26,7 @@ type Props = {
   onClose: () => void;
   onSubmit: (args: {
     itemId: string;
-    dateCompleted?: string; // MM/DD/YYYY
+    dateCompleted?: string;
     uploadedUrl: string;
     photoKind: "upload" | "camera" | null;
   }) => void;
@@ -45,7 +45,6 @@ export default function CompleteItemModal({
   const [loading, setLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  // Lock background scroll
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -86,11 +85,11 @@ export default function CompleteItemModal({
       const data = await res.json();
 
       if (data.success && data.url) {
-        setUploadedUrl(data.url); // replace temp preview with real uploaded URL
+        setUploadedUrl(data.url); 
       } else {
         console.error("Upload failed", data);
         alert("Upload failed. Please try again.");
-        setUploadedUrl(null); // clear invalid temp URL
+        setUploadedUrl(null);
       }
     } catch (err) {
       console.error("Upload error", err);
