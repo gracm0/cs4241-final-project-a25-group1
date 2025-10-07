@@ -308,6 +308,7 @@ export default function BucketList() {
       if (editDebounceRef.current[iid])
         clearTimeout(editDebounceRef.current[iid]);
       editDebounceRef.current[iid] = setTimeout(async () => {
+
         try {
           const res = await fetch("/api/item-action", {
             method: "POST",
@@ -405,9 +406,10 @@ export default function BucketList() {
       console.error("Failed to add to gallery:", err);
     }
 
-    // 3) Persist to backend (done + image)
+
+    // 3) Persist to backend (done + image), keep item locally (no refetch)
     try {
-      await fetch("/api/item-action", {
+      const res = await fetch("/api/item-action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -424,27 +426,78 @@ export default function BucketList() {
         }),
       });
 
-      // Refresh full list (both done + not done)
-      const res = await fetch(
-        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}`
-      );
+      // If server returns an _id for a brand-new item, stitch it in
       if (res.ok) {
-        const fresh = await res.json();
-        setItems(fresh.length ? fresh : [makeDefaultItem()]);
+        const saved = await res.json().catch(() => ({}));
+        if (saved && saved._id) {
+          setItems((xs) =>
+              xs.map((x) =>
+                  x.id === itemToUpdate.id ? { ...x, _id: saved._id } : x
+              )
+          );
+        }
       }
     } catch (err) {
       console.error("Failed to complete item:", err);
       alert("Failed to complete item.");
     }
 
+
+
+
     setCompleteItem(null);
   };
 
+
+  // Map many possible priority encodings → rank (0 best)
+  function priorityRank(v: unknown): number {
+    if (v === null || v === undefined) return 3;
+
+    // numeric variants
+    if (typeof v === "number") {
+      if (v <= 0) return 0;     // 0 = high/pink
+      if (v === 1) return 1;    // 1 = med/yellow
+      if (v >= 2) return 2;     // 2+ = low/green
+    }
+
+    const s = String(v).trim().toLowerCase();
+
+    // common names & aliases
+    if (["pink", "p", "high", "hi", "hot", "rose", "red"].includes(s)) return 0;
+    if (["yellow", "y", "amber", "med", "medium"].includes(s)) return 1;
+    if (["green", "g", "low"].includes(s)) return 2;
+
+    // hex/color-ish fallbacks (optional)
+    if (s.includes("#ff") && (s.includes("99a7") || s.includes("a5a5"))) return 0; // pink-ish
+    if (s.includes("ffd6") || s.includes("fde68a")) return 1;                       // yellow-ish
+    if (s.includes("34d3") || s.includes("86ef") || s.includes("16a3")) return 2;   // green-ish
+
+    return 3; // unknown/unset → bottom
+  }
+
+
   /* ---------------- computed ordering + reset logic ---------------- */
   const orderedItems = useMemo(() => {
-    // Incomplete (done=false) first, then completed (done=true); keep stable order within groups
-    return [...items].sort((a, b) => Number(a.done) - Number(b.done));
+    // stable sort: incomplete first, then by priority (pink→yellow→green), keep original order on ties
+    return [...items]
+        .map((it, idx) => ({ it, idx }))
+        .sort((a, b) => {
+          // 1) done status (incomplete on top)
+          const doneA = Number(a.it.done);
+          const doneB = Number(b.it.done);
+          if (doneA !== doneB) return doneA - doneB;
+
+          // 2) priority rank
+          const ra = priorityRank((a.it as any).priority);
+          const rb = priorityRank((b.it as any).priority);
+          if (ra !== rb) return ra - rb;
+
+          // 3) preserve original order for stability
+          return a.idx - b.idx;
+        })
+        .map(({ it }) => it);
   }, [items]);
+
 
   const allFinished = items.length > 0 && items.every((i) => i.done);
 
@@ -624,6 +677,19 @@ export default function BucketList() {
                 >
                   <img src={friend} alt="Invite" className="h-6 w-6" />
                 </button>
+
+                <button
+                    title="Clear this bucket (delete all items)"
+                    aria-label="Clear this bucket"
+                    onClick={resetWholeList}
+                    className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#F87171] text-white font-bold hover:opacity-90"
+                >
+                  🗑
+                </button>
+
+
+
+
               </div>
             </div>
           )}
