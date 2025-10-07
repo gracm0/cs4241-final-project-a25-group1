@@ -19,6 +19,7 @@ import BucketCard, { Priority, BucketItem } from "../components/BucketCard";
 import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import friend from "../assets/icons8-person-64.png";
+import trash from "../assets/icons8-trash-can-24.png";
 import BucketGallery, {
   GALLERY_LS_KEY,
 } from "../components/BucketGalleryPanel";
@@ -670,7 +671,7 @@ export default function BucketList() {
                     <button
                         title="Invite collaborators (max 4)"
                         onClick={() => setInviteOpen(true)}
-                        className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#FF99A7]"
+                        className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#0092E0]"
                     >
                       <img src={friend} alt="Invite" className="h-6 w-6" />
                     </button>
@@ -679,9 +680,9 @@ export default function BucketList() {
                         title="Clear this bucket (delete all items)"
                         aria-label="Clear this bucket"
                         onClick={resetWholeList}
-                        className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#F87171] text-white font-bold hover:opacity-90"
+                        className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#FF99A7] text-white font-bold hover:opacity-90"
                     >
-                      🗑
+                    <img src={trash} alt="trash" className="h-6 w-6" />
                     </button>
 
 
@@ -695,20 +696,6 @@ export default function BucketList() {
                 <BucketGallery />
             ) : (
                 <>
-                  {/* Top bar: optional reset when all items are finished */}
-                  {allFinished && (
-                      <div className="mb-4">
-                        <button
-                            type="button"
-                            onClick={resetWholeList}
-                            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 hover:bg-rose-100"
-                            title="Reset bucket to empty"
-                        >
-                          Reset Bucket
-                        </button>
-                      </div>
-                  )}
-
                   {/* Cards — render ordered so completed sink to the bottom */}
                   <div className="grid max-w-[820px] gap-[18px]">
                     {orderedItems.map((it) => (
