@@ -501,6 +501,7 @@ export default function BucketList() {
 
   async function resetWholeList() {
     if (!confirm("Reset this bucket back to an empty list?")) return;
+    if (!user?.email) return; // exit if user/email not ready
 
     // client-side reset
     setItems([makeDefaultItem()]);
@@ -508,10 +509,8 @@ export default function BucketList() {
     // optional server reset (best-effort; ignore failure)
     try {
       await fetch(
-        `/api/item-action/reset-bucket?email=${encodeURIComponent(
-          user?.email || ""
-        )}&bucketNumber=${activeBucket}`,
-        { method: "POST" }
+        `/api/item-action/reset-bucket?email=${encodeURIComponent(user?.email)}&bucketNumber=${activeBucket}`,
+        { method: "DELETE" }
       );
     } catch (e) {
       // ignore

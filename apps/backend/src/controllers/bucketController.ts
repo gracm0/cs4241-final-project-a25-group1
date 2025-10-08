@@ -90,3 +90,12 @@ export async function updateManyItems(
   );
   return modified;
 }
+
+// delete all items in a bucket for a user
+export async function deleteAllItemsInBucket(email: string, bucketNumber: number) {
+  const result = await BucketItem.deleteMany({ email, bucketNumber });
+  if (result.deletedCount === 0) {
+    return { success: false, message: "No items found in this bucket" };
+  }
+  return { success: true, deletedCount: result.deletedCount };
+}

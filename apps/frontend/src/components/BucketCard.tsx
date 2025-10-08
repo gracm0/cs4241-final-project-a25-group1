@@ -22,8 +22,8 @@ export const PRIORITY_OPTS: Array<{
   color: string;
   title: string;
 }> = [
-  { key: "med", color: COLORS.yellow, title: "Medium (Yellow)" },
   { key: "high", color: COLORS.pink, title: "High (Pink)" },
+  { key: "med", color: COLORS.yellow, title: "Medium (Yellow)" },
   { key: "low", color: COLORS.green, title: "Low (Green)" },
 ];
 

@@ -7,6 +7,7 @@ import {
   updateManyItems,
   getBucketTitle,
   getAllBucketTitles,
+  deleteAllItemsInBucket,
 } from "../controllers/bucketController";
 
 const router = Router();
@@ -89,6 +90,21 @@ router.delete("/", async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to delete item" });
+  }
+});
+
+// DELETE /item-action/reset-bucket?email={...}&bucketNumber={...}
+// parameters: bucketNumber, title
+router.delete("/reset-bucket", async (req, res) => {
+  try {
+    const { email, bucketNumber } = req.query;
+    const result = await deleteAllItemsInBucket(
+      email as string,
+      Number(bucketNumber)
+    );
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete all items" });
   }
 });
 
