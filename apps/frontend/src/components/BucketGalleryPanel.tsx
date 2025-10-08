@@ -75,19 +75,42 @@ export default function BucketGalleryPanel({
         console.log("Current user response:", response);
         setUserEmail(response.user.email);
 
-        console.log("Fetching completed items for:", response.user.email);
-        // Get completed items with images
-        const items = (await api.getCompletedItems(
-          response.user.email
-        )) as any[];
-        console.log("Completed items response:", items);
+        console.log("Fetching gallery images for:", response.user.email);
+        // Get gallery images
+        const imagesRes = await fetch(
+          `/api/gallery-image?userEmail=${encodeURIComponent(
+            response.user.email
+          )}`
+        );
+        const images = await imagesRes.json();
+        console.log("Gallery images response:", images);
 
-        // Transform items to photos
-        const transformedPhotos = items
-          .map(transformBucketItemToPhoto)
-          .filter((photo: Photo | null): photo is Photo => photo !== null);
+        // Transform gallery images to photos
+        const transformedPhotos = images.map((img: any) => ({
+          id: img._id,
+          title: img.title || "Untitled",
+          desc: img.desc || "",
+          src: img.image,
+          date: img.completedAt
+            ? new Date(img.completedAt).toISOString().slice(0, 10)
+            : new Date(img.createdAt).toISOString().slice(0, 10),
+          createdAt: img.createdAt || new Date().toISOString(),
+          extra: {
+            bucketTitle: img.bucketTitle || "",
+          },
+        }));
 
-        console.log("Transformed photos:", transformedPhotos);
+        photos.map((photo) => (
+          <div key={photo.id} className="gallery-card">
+            <img src={photo.src} alt={photo.title} />
+            <div className="gallery-info">
+              <h3>{photo.title}</h3>
+              <p>{photo.desc}</p>
+              <p>Bucket: {photo.extra?.bucketTitle}</p>
+            </div>
+          </div>
+        ));
+
         setPhotos(transformedPhotos);
       } catch (err) {
         console.error("Failed to fetch photos:", err);
@@ -100,42 +123,32 @@ export default function BucketGalleryPanel({
     fetchData();
   }, []);
 
-  // Refresh photos when window gains focus
-  useEffect(() => {
-    async function reload() {
-      if (!userEmail) return;
-
-      try {
-        const items = (await api.getCompletedItems(userEmail)) as any[];
-        const transformedPhotos = items
-          .map(transformBucketItemToPhoto)
-          .filter((photo: Photo | null): photo is Photo => photo !== null);
-        setPhotos(transformedPhotos);
-      } catch (err) {
-        console.error("Failed to refresh photos:", err);
-      }
-    }
-
-    window.addEventListener("focus", reload);
-    return () => window.removeEventListener("focus", reload);
-  }, [userEmail]);
-
-  // Listen for bucket list updates
+  // Listen for gallery changes
   useEffect(() => {
     async function onBucketUpdate() {
       if (!userEmail) return;
-
       try {
-        const items = (await api.getCompletedItems(userEmail)) as any[];
-        const transformedPhotos = items
-          .map(transformBucketItemToPhoto)
-          .filter((photo: Photo | null): photo is Photo => photo !== null);
+        const imagesRes = await fetch(
+          `/api/gallery-image?userEmail=${encodeURIComponent(userEmail)}`
+        );
+        const images = await imagesRes.json();
+        const transformedPhotos = images.map((img: any) => ({
+          id: img._id,
+          title: img.title || "Untitled",
+          src: img.image,
+          date: img.completedAt
+            ? new Date(img.completedAt).toISOString().slice(0, 10)
+            : new Date(img.createdAt).toISOString().slice(0, 10),
+          createdAt: img.createdAt || new Date().toISOString(),
+          extra: {
+            bucketNumber: img.bucketNumber,
+          },
+        }));
         setPhotos(transformedPhotos);
       } catch (err) {
-        console.error("Failed to refresh photos:", err);
+        console.error("Failed to refresh gallery photos:", err);
       }
     }
-
     window.addEventListener("gallery:changed", onBucketUpdate as EventListener);
     return () =>
       window.removeEventListener(
@@ -169,14 +182,12 @@ export default function BucketGalleryPanel({
   }, [photos, query]);
 
   const tiles: Photo[] = useMemo(() => {
-    return filtered; // Show all filtered photos, no limit
+    return filtered;
   }, [filtered]);
 
   function onDelete(id: string) {
     if (!confirm("Delete this photo?")) return;
 
-    // For now, we'll just remove it from the local state
-    // In a full implementation, you might want to add a delete API endpoint
     setPhotos((prev) => {
       const next = prev.filter((p) => p.id !== id);
       return next;
@@ -242,7 +253,6 @@ export default function BucketGalleryPanel({
           </div>
         </div>
       ) : (
-        /* Responsive grid - 5 columns on desktop, fewer on smaller screens */
         <div className="grid gap-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 justify-items-center">
           {tiles.map((p) => (
             <div
@@ -265,9 +275,26 @@ export default function BucketGalleryPanel({
                   ) : null}
                   <div className="mt-1 text-[12px] opacity-90">
                     Completed:{" "}
-                    {new Date(p.date || p.createdAt).toLocaleDateString()}
+                    {(() => {
+                      if (
+                        typeof p.date === "string" &&
+                        p.date.length === 10 &&
+                        p.date.match(/^\d{4}-\d{2}-\d{2}$/)
+                      ) {
+                        const [year, month, day] = p.date
+                          .split("-")
+                          .map(Number);
+                        return new Date(
+                          year,
+                          month - 1,
+                          day
+                        ).toLocaleDateString();
+                      }
+                      return new Date(
+                        p.date || p.createdAt
+                      ).toLocaleDateString();
+                    })()}
                   </div>
-
                   {p.extra && (
                     <dl className="mt-2">
                       {Object.entries(p.extra).map(([k, v]) => (
@@ -324,6 +351,28 @@ export default function BucketGalleryPanel({
               <div className="mt-1 text-[12px] opacity-70">
                 {new Date(active.date || active.createdAt).toLocaleString()}
               </div>
+              {active.extra?.bucketTitle && (
+                <div className="mt-1 text-[12px] opacity-80">
+                  Bucket: {active.extra.bucketTitle}
+                </div>
+              )}
+              {active.extra && (
+                <dl className="mt-2">
+                  {Object.entries(active.extra).map(([k, v]) => (
+                    <div
+                      key={k}
+                      className="grid grid-cols-[auto_1fr] items-start gap-2"
+                    >
+                      <dt className="text-[12px] font-semibold opacity-90">
+                        {formatKey(k)}
+                      </dt>
+                      <dd className="text-[12px] opacity-95 break-words">
+                        {String(v)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
             </div>
             <button
               type="button"

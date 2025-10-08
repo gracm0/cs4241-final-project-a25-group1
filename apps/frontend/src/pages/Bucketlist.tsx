@@ -390,30 +390,57 @@ export default function BucketList() {
     const itemToUpdate = items.find((x) => x.id === completeItem.id);
     if (!itemToUpdate || !user?.email) return;
 
-    // 1) Optimistically mark the item done (keeps it in the list)
-    setItems((xs) =>
-      xs.map((x) => (x.id === completeItem.id ? { ...x, done: true } : x))
-    );
-
-    // Notify the gallery that an item was completed
-    window.dispatchEvent(new Event("gallery:changed"));
-    console.log("Item completed successfully, gallery notified");
-
-    // 3) Persist to backend (done + image), keep item locally (no refetch)
+    // 1) Persist to backend (done + image)
     try {
-      const res = await fetch(
-        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}`
+      const completedAt = args.dateCompleted || new Date().toISOString();
+      // Save completed item
+      const res = await fetch("/api/item-action", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...itemToUpdate,
+          done: true,
+          completedAt,
+          image: imageUrl,
+          email: user.email,
+          bucketNumber: activeBucket,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save completed item");
+
+      // 2) Save image to gallery
+      // Use sidebarTitles for the correct bucket title
+      const galleryBucketTitle =
+        sidebarTitles[activeBucket - 1] ||
+        listTitle ||
+        `Bucket ${activeBucket}`;
+      await fetch("/api/gallery-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userEmail: user.email,
+          bucketTitle: galleryBucketTitle,
+          title: itemToUpdate.title,
+          desc: itemToUpdate.desc,
+          image: imageUrl,
+          completedAt,
+        }),
+      });
+
+      // 3) Refetch items from backend to sync UI
+      const itemsRes = await fetch(
+        `/api/item-action?bucketNumber=${activeBucket}&email=${user.email}`
       );
-      if (res.ok) {
-        const saved = await res.json().catch(() => ({}));
-        if (saved && saved._id) {
-          setItems((xs) =>
-            xs.map((x) =>
-              x.id === itemToUpdate.id ? { ...x, _id: saved._id } : x
-            )
-          );
-        }
-      }
+      const data = await itemsRes.json();
+      setItems(data.length ? data : [makeDefaultItem()]);
+
+      // Notify the gallery that an item was completed
+      window.dispatchEvent(new Event("gallery:changed"));
+      console.log("Item completed successfully, gallery notified");
     } catch (err) {
       console.error("Failed to complete item:", err);
       alert("Failed to complete item.");
