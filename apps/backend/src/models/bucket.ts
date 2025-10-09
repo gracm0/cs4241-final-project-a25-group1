@@ -1,3 +1,4 @@
+// bucket.ts
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IBucket extends Document {
