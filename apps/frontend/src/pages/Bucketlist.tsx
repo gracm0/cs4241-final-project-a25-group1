@@ -580,7 +580,12 @@ export default function BucketList() {
         const rb = priorityRank((b.it as any).priority);
         if (ra !== rb) return ra - rb;
 
-        // 3) preserve original order for stability
+        // 3) alphabetically by title (case-sensitive)
+        const titleA = (a.it.title || "").toLowerCase();
+        const titleB = (b.it.title || "").toLowerCase();
+        if (titleA !== titleB) return titleA.localeCompare(titleB);
+
+        // 4) preserve original order for stability
         return a.idx - b.idx;
       })
       .map(({ it }) => it);

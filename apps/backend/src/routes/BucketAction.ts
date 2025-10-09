@@ -3,7 +3,9 @@ import {
     getBucketTitle,
     getAllBucketTitles,
     updateBucketTitle,
+    deleteBucket,
  } from "../controllers/bucketController";
+ import { deleteAllItemsInBucket } from "../controllers/bucketItemController";
 
 const router = Router();
 
@@ -68,6 +70,36 @@ router.post("/", async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: "Failed to save bucket title" });
     }
-})
+});
+
+/*  delete bucket and all of its items
+    DELETE /bucket-action/delete?bucketId={...}
+*/
+router.delete("/delete", async (req, res) => {
+  try {
+    const { bucketId } = req.query;
+
+    if (!bucketId || typeof bucketId !== "string") {
+      return res.status(400).json({ 
+        success: false, 
+        message: "bucketId is required" 
+      });
+    }
+
+    // First, delete all items in the bucket
+    await deleteAllItemsInBucket(bucketId);
+
+    // Then, delete the bucket itself
+    const result = await deleteBucket(bucketId);
+    
+    res.json(result);
+  } catch (err) {
+    console.error("Error deleting bucket:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to delete bucket" 
+    });
+  }
+});
 
 export default router;

@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { Bucket } from "../models/bucket";
 import User from "../models/user";
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 
 const router = Router();
 
@@ -135,14 +135,19 @@ router.post("/accept-invite", async (req, res) => {
       const bucketTitles = await Promise.all(
         user.bucketOrder.map(async (bid, idx) => {
           if (!bid || bid.trim() === "") {
-            return { index: idx, title: `Empty Slot ${idx + 1}`, isEmpty: true };
+            return { 
+              index: idx, 
+              title: `Empty Slot ${idx + 1}`, 
+              isEmpty: true 
+            };
           }
           const b = await Bucket.findOne({ bucketId: bid });
           return { 
             index: idx, 
             title: b?.bucketTitle || `Bucket ${idx + 1}`, 
             isEmpty: false,
-            isOwner: b?.ownerEmail === user.email
+            isOwner: b?.ownerEmail === user.email,
+            oldBucketId: bid
           };
         })
       );
@@ -151,7 +156,7 @@ router.post("/accept-invite", async (req, res) => {
         success: false,
         requiresSelection: true,
         message: "Please choose which bucket slot to use",
-        bucketId: bucket.bucketId,
+        bucketId: bucket.bucketId, // new bucket they are joining
         bucketTitle: bucket.bucketTitle,
         owner: bucket.ownerEmail,
         currentBuckets: bucketTitles
@@ -308,12 +313,27 @@ router.delete("/remove-collaborator", async (req, res) => {
     bucket.collaborators = bucket.collaborators.filter(e => e !== collaboratorEmail);
     await bucket.save();
 
-    // Remove bucket from the collaborator's bucketOrder
+    // Remove bucket from the collaborator's bucketOrder AND create a new blank bucket
     const collaborator = await User.findOne({ email: collaboratorEmail });
     if (collaborator) {
       const index = collaborator.bucketOrder.indexOf(bucketId);
       if (index !== -1) {
-        collaborator.bucketOrder[index] = ""; // Clear the slot
+        // Generate new bucket ID for the blank bucket
+        const newBucketId = `bucket-${randomUUID()}`;
+        
+        // Create new blank bucket
+        const newBucket = new Bucket({
+          bucketId: newBucketId,
+          bucketTitle: "",
+          ownerEmail: collaborator.email,
+          collaborators: [collaborator.email],
+          inviteCode: null,
+          inviteExpiry: null,
+        });
+        await newBucket.save();
+        
+        // Replace with new blank bucket in their bucketOrder
+        collaborator.bucketOrder[index] = newBucketId;
         await collaborator.save();
       }
     }
