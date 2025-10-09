@@ -242,62 +242,106 @@ export default function BucketList() {
   );
 
   /* ---------------- collaborators ---------------- */
+  interface Collab {
+    id: string;
+    name: string;
+    color: string;
+    isOwner?: boolean;
+  }
+
   const [collabs, setCollabs] = useState<Collab[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState("");
+  const [loadingInvite, setLoadingInvite] = useState(false);
 
+  // Helper function for consistent colors
+  function getCollaboratorColor(index: number): string {
+    const palette = ["#ff6b6b", "#2ecc71", "#3498db", "#9b59b6"];
+    return palette[index % palette.length];
+  }
+
+  // Fetch real collaborators from backend
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.bucketOrder?.[activeBucketIndex]) return;
+    
+    const fetchCollaborators = async () => {
+      try {
+        const bucketId = user.bucketOrder[activeBucketIndex];
+        const res = await fetch(`/api/collab/collaborators/${bucketId}`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          setCollabs(data.collaborators.map((c: any, idx: number) => ({
+            id: c.email === user.email ? "me" : c.email,
+            name: c.name,
+            color: getCollaboratorColor(idx),
+            isOwner: c.isOwner,
+          })));
+        }
+      } catch (err) {
+        console.error("Failed to fetch collaborators:", err);
+      }
+    };
+    
+    fetchCollaborators();
+  }, [activeBucketIndex, user]);
+
+  // Generate invite link when modal opens
+  const handleOpenInvite = async () => {
+    setInviteOpen(true);
+    if (!user?.bucketOrder?.[activeBucketIndex]) return;
+    
+    setLoadingInvite(true);
     try {
-      const raw = localStorage.getItem(`bucket:${activeBucketIndex}:collabs`);
-      const fallback: Collab[] = [
-        { id: "me", name: user.email, color: "#ff6b6b" },
-      ];
-      setCollabs(raw ? (JSON.parse(raw) as Collab[]) : fallback);
-    } catch {
-      setCollabs([{ id: "me", name: user.email, color: "#ff6b6b" }]);
+      const res = await fetch("/api/collab/generate-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ bucketId: user.bucketOrder[activeBucketIndex] }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setInviteUrl(data.inviteUrl);
+      }
+    } catch (err) {
+      console.error("Failed to generate invite:", err);
+    } finally {
+      setLoadingInvite(false);
     }
-  }, [activeBucketIndex, user?.email]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        `bucket:${activeBucketIndex}:collabs`,
-        JSON.stringify(collabs)
-      );
-    } catch {}
-  }, [collabs, activeBucketIndex]);
+  };
 
   const canAddMore = collabs.length < 4;
-  const addCollaborator = (raw: string) => {
-    const name = raw.trim();
-    if (!name || !canAddMore) return;
-    if (collabs.some((c) => c.name.toLowerCase() === name.toLowerCase()))
-      return;
-    const palette = [
-      "#2ecc71",
-      "#3498db",
-      "#9b59b6",
-      "#f39c12",
-      "#e67e22",
-      "#e84393",
-    ];
-    setCollabs((cs) => [
-      ...cs,
-      {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        name,
-        color: palette[Math.floor(Math.random() * palette.length)],
-      },
-    ]);
-  };
-  const removeCollaborator = (cid: string) =>
-    cid !== "me" && setCollabs((cs) => cs.filter((c) => c.id !== cid));
 
-  const inviteUrl = user
-    ? `${window.location.origin}/bucket/${activeBucketIndex}?invite=${btoa(
-        `${user.email}:${activeBucketIndex}`
-      )}`
-    : "";
+  const removeCollaborator = async (email: string) => {
+    if (!user?.bucketOrder?.[activeBucketIndex]) return;
+    
+    if (!confirm("Remove this collaborator from the bucket?")) return;
+    
+    try {
+      const res = await fetch("/api/collab/remove-collaborator", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          bucketId: user.bucketOrder[activeBucketIndex],
+          collaboratorEmail: email,
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setCollabs(cs => cs.filter(c => c.id !== email));
+      } else {
+        alert(data.message || "Failed to remove collaborator");
+      }
+    } catch (err) {
+      console.error("Failed to remove collaborator:", err);
+      alert("Failed to remove collaborator");
+    }
+  };
 
   /* ---------------- bucket items ---------------- */
   const [items, setItems] = useState<BucketItem[]>([]);
@@ -723,7 +767,7 @@ export default function BucketList() {
                 {!canAddMore && <span className="opacity-70">(Max 4)</span>}
                 <button
                   title="Invite collaborators (max 4)"
-                  onClick={() => setInviteOpen(true)}
+                  onClick={handleOpenInvite}
                   className="grid h-10 w-10 place-items-center justify-center rounded-full bg-[#0092E0]"
                 >
                   <img src={friend} alt="Invite" className="h-6 w-6" />
@@ -783,55 +827,75 @@ export default function BucketList() {
               Invite collaborators
             </h3>
             <p className="mb-3 text-[13px] opacity-75">
-              Share this link or add people by name. Max 4 total (including
-              you).
+              Share this link to invite collaborators. The link expires in 7 days. Max 4 total (including you).
             </p>
 
-            <div className="mb-3 flex gap-2">
-              <input
-                value={inviteUrl}
-                readOnly
-                className="h-[42px] flex-1 rounded-lg border border-gray-200 bg-[#fafafa] px-3 text-[14px] outline-none"
-              />
-              <button
-                className="h-[42px] rounded-lg bg-[#111827] px-4 text-white"
-                onClick={() => navigator.clipboard.writeText(inviteUrl)}
-              >
-                Copy
-              </button>
+            {loadingInvite ? (
+              <div className="mb-3 flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF99A7]" />
+              </div>
+            ) : (
+              <div className="mb-3 flex gap-2">
+                <input
+                  value={inviteUrl}
+                  readOnly
+                  className="h-[42px] flex-1 rounded-lg border border-gray-200 bg-[#fafafa] px-3 text-[14px] outline-none"
+                />
+                <button
+                  className="h-[42px] rounded-lg bg-[#111827] px-4 text-white hover:bg-[#1f2937]"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteUrl);
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+            )}
+
+            <div className="mb-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+              💡 Anyone with this link can join your bucket list as a collaborator.
             </div>
 
-            <InviteForm disabled={!canAddMore} onAdd={addCollaborator} />
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {collabs.map((c) => (
-                <span
-                  key={c.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1.5 text-[12px]"
-                >
+            <div className="mb-3">
+              <h4 className="text-sm font-semibold mb-2">Current collaborators:</h4>
+              <div className="flex flex-wrap gap-2">
+                {collabs.map((c) => (
                   <span
-                    className="grid h-[18px] w-[18px] place-items-center rounded-full text-[11px] font-bold text-white"
-                    style={{ background: c.color }}
+                    key={c.id}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1.5 text-[12px]"
                   >
-                    {initials(c.name)}
-                  </span>
-                  {c.name}
-                  {c.id !== "me" && (
-                    <button
-                      onClick={() => removeCollaborator(c.id)}
-                      title="Remove"
-                      className="ml-1 text-xs"
+                    <span
+                      className="grid h-[18px] w-[18px] place-items-center rounded-full text-[11px] font-bold text-white"
+                      style={{ background: c.color }}
                     >
-                      ✕
-                    </button>
-                  )}
-                </span>
-              ))}
+                      {initials(c.name)}
+                    </span>
+                    {c.name}
+                    {c.isOwner && (
+                      <span className="ml-1 text-xs text-gray-500">(Owner)</span>
+                    )}
+                    {c.id !== "me" && !c.isOwner && (
+                      <button
+                        onClick={() => removeCollaborator(c.id)}
+                        title="Remove"
+                        className="ml-1 text-xs hover:text-red-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+              {!canAddMore && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Maximum collaborators reached (4/4)
+                </p>
+              )}
             </div>
 
             <div className="mt-4 text-right">
               <button
-                className="rounded-lg bg-[#111827] px-3.5 py-2 text-white"
+                className="rounded-lg bg-[#111827] px-3.5 py-2 text-white hover:bg-[#1f2937]"
                 onClick={() => setInviteOpen(false)}
               >
                 Done

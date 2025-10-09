@@ -6,6 +6,8 @@ export interface IBucket extends Document {
   bucketTitle?: string;
   ownerEmail: string;
   collaborators: string[]; // must include ownerEmail
+  inviteCode?: string;
+  inviteExpiry?: Date;
 }
 
 const bucketSchema = new Schema<IBucket>( 
@@ -14,6 +16,8 @@ const bucketSchema = new Schema<IBucket>(
     bucketTitle: { type: String },
     ownerEmail: { type: String, required: true },
     collaborators: { type: [String], required: true }, // array of emails
+    inviteCode: { type: String },
+    inviteExpiry: { type: String },
   },
   { timestamps: true }
 );
