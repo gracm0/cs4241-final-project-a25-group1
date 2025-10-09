@@ -1,8 +1,10 @@
+// galleryImage.ts
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IGalleryImage extends Document {
-  userEmail: string;
+  bucketId: string;
   bucketTitle?: string;
+  userEmail: string; // who completed item or uploaded image
   title: string;
   desc?: string;
   image: string;
@@ -11,8 +13,9 @@ export interface IGalleryImage extends Document {
 
 const galleryImageSchema = new Schema<IGalleryImage>(
   {
-    userEmail: { type: String, required: true },
+    bucketId: { type: String, required: true },
     bucketTitle: { type: String },
+    userEmail: { type: String, required: true },
     title: { type: String, required: true },
     desc: { type: String },
     image: { type: String, required: true },

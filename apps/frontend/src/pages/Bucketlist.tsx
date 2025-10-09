@@ -530,13 +530,17 @@ export default function BucketList() {
         sidebarTitles[activeBucketIndex] ||
         listTitle ||
         `Bucket ${activeBucketIndex + 1}`;
+        
+      const bucketId = user.bucketOrder[activeBucketIndex];
+
       await fetch("/api/gallery-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
-          userEmail: user.email,
+          bucketId,
           bucketTitle: galleryBucketTitle,
           title: itemToUpdate.title,
           desc: itemToUpdate.desc,

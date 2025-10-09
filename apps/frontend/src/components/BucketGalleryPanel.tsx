@@ -1,3 +1,4 @@
+// BucketGalleryPanel.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import * as api from "../api";
 
@@ -76,11 +77,13 @@ export default function BucketGalleryPanel({
 
         console.log("Fetching gallery images for:", response.user.email);
         // Get gallery images
-        const imagesRes = await fetch(
-          `/api/gallery-image?userEmail=${encodeURIComponent(
-            response.user.email
-          )}`
-        );
+        const imagesRes = await fetch("/api/gallery-image", {
+          credentials: "include"
+        });
+
+        if (!imagesRes.ok) {
+          throw new Error(`Failed to fetch images: ${imagesRes.status}`);
+        }
         const images = await imagesRes.json();
         console.log("Gallery images response:", images);
 
@@ -99,17 +102,6 @@ export default function BucketGalleryPanel({
           },
         }));
 
-        photos.map((photo) => (
-          <div key={photo.id} className="gallery-card">
-            <img src={photo.src} alt={photo.title} />
-            <div className="gallery-info">
-              <h3>{photo.title}</h3>
-              <p>{photo.desc}</p>
-              <p>Bucket: {photo.extra?.bucketTitle}</p>
-            </div>
-          </div>
-        ));
-
         setPhotos(transformedPhotos);
       } catch (err) {
         console.error("Failed to fetch photos:", err);
@@ -127,9 +119,14 @@ export default function BucketGalleryPanel({
     async function onBucketUpdate() {
       if (!userEmail) return;
       try {
-        const imagesRes = await fetch(
-          `/api/gallery-image?userEmail=${encodeURIComponent(userEmail)}`
-        );
+        const imagesRes = await fetch("/api/gallery-image", {
+          credentials: "include"
+        });
+
+        if (!imagesRes.ok) {
+          throw new Error(`Failed to fetch images: ${imagesRes.status}`);
+        }
+
         const images = await imagesRes.json();
         const transformedPhotos = images.map((img: any) => ({
           id: img._id,
@@ -184,15 +181,29 @@ export default function BucketGalleryPanel({
   function onDelete(id: string) {
     if (!confirm("Delete this photo?")) return;
 
-    setPhotos((prev) => {
-      const next = prev.filter((p) => p.id !== id);
-      return next;
-    });
-
+    // Optimistically update UI
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
     if (active?.id === id) setActive(null);
 
-    // Notify other components that the gallery changed
-    window.dispatchEvent(new Event("gallery:changed"));
+    // Delete from backend
+    fetch(`/api/gallery-image/${id}`, {
+      method: "DELETE",
+      credentials: "include"
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to delete");
+        return res.json();
+      })
+      .then(() => {
+        // Notify other components that the gallery changed
+        window.dispatchEvent(new Event("gallery:changed"));
+      })
+      .catch((err) => {
+        console.error("Failed to delete photo:", err);
+        alert("Failed to delete photo. Please try again.");
+        // Refresh to restore correct state
+        window.location.reload();
+      });
   }
 
   return (
