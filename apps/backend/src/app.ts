@@ -11,40 +11,18 @@ import connectDB from "./db";
 
 const app = express();
 
-const allowedOrigins = process.env.NODE_ENV === "production" 
-  ? [process.env.FRONTEND_URL || "https://photobucket.onrender.com"]
-  : ["http://localhost:5173", "http://localhost:3000"];
-
-console.log("CORS allowed origins:", allowedOrigins);
-console.log("NODE_ENV:", process.env.NODE_ENV);
-console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-
+// Fix CORS: allow frontend origin and handle preflight requests
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    origin: `${process.env.FRONTEND_URL}`,
+    credentials: true, // allow cookies
   })
 );
 
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Debug middleware
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  console.log("Headers:", req.headers.cookie ? { cookie: req.headers.cookie } : "No cookies");
-  next();
-});
-
 // Session middleware
-console.log("Session config:", {
-  nodeEnv: process.env.NODE_ENV,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax"
-});
-
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "supersecretkey",
@@ -58,7 +36,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60 * 24 * 7,
-      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax", // Changed from "none" to "lax"
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })
 );
@@ -66,16 +44,6 @@ app.use(
 // API routes
 app.use("/api", routes);
 app.use("/api/upload", uploadRoutes);
-
-// Debug session route
-app.get("/api/debug-session", (req, res) => {
-  res.json({
-    sessionID: req.sessionID,
-    session: req.session,
-    cookies: req.headers.cookie,
-    userId: req.session?.userId
-  });
-});
 
 // Serve frontend build (apps/frontend/dist)
 const clientDistPath = path.resolve(__dirname, "../../frontend/dist");

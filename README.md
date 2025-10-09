@@ -1,7 +1,7 @@
 # PhotoBucket: Every Bucket Deserves a Photo Finish
 Team 1: Amanda Longo, Grace Mahoney, Nia Junod
 
-Link to PhotoBucket App: 
+Link to PhotoBucket App: https://photobucket.onrender.com
 
 ## General description
 **PhotoBucket** is a collaborative bucket list web application that allows users to create, manage and share their life goals with their friends or family. Users can sign up and organize their goals within 4 custom bucket lists. Each bucket list contains individual items with descriptions, locations, priority levels and completion status, similar to a regular to do list. Our collaboration feature allows users to invite up to 4 people to their bucket list to work towards the same goals and create memories together. The collaboration aspect uses real time editing so that users can work at the same time to add and edit their goals. 
