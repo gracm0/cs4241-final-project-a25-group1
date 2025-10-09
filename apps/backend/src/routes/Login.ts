@@ -11,17 +11,30 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // save user info in session
+    // save user info in session and force session creation
     req.session.userId = user._id.toString();
+    
+    // Explicitly force session initialization by marking it as modified
+    req.session.isLoggedIn = true;
+    
     console.log("Session after login:", req.session); // DEBUG
+    console.log("Session ID:", req.sessionID); // DEBUG
 
-    // Ensure session is saved before responding with a small delay
+    // Ensure session is saved and cookie is set before responding
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
         return res.status(500).json({ message: "Session save failed" });
       }
       console.log("Session successfully saved, ID:", req.sessionID);
+      
+      // Explicitly set the session cookie in the response
+      res.cookie('sessionId', req.sessionID, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      });
       
       // Add a small delay to ensure session is fully persisted
       setTimeout(() => {

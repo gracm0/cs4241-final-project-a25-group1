@@ -38,7 +38,7 @@ app.use(
     name: "sessionId", // explicit session name
     secret: process.env.SESSION_SECRET || "supersecretkey",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Changed to true to create session cookies
     store: MongoStore.create({
       mongoUrl: `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.MONGO_HOST}/?retryWrites=true&w=majority&appName=Cluster0`,
       collectionName: "sessions",
