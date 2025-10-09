@@ -668,7 +668,7 @@ export default function BucketList() {
       <div className="mb-10 mt-3 ml-3 flex items-center gap-3 overflow-hidden">
         <img
           src={biglogo}
-          alt="Photobucket logo"
+          alt="PhotoBucket logo"
           className="w-[50px] h-[50px] rounded-[14px] bg-[#FF99A7]"
         />
         <motion.span
@@ -678,7 +678,7 @@ export default function BucketList() {
           className="font-roboto text-[#302F4D] text-2xl font-bold leading-none whitespace-nowrap"
           style={{ display: open ? "inline-block" : "none" }}
         >
-          Photobucket
+          PhotoBucket
         </motion.span>
       </div>
     );
