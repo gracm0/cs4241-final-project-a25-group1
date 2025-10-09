@@ -15,16 +15,9 @@ router.post("/", async (req, res) => {
     req.session.userId = user._id.toString();
     console.log("Session after login:", req.session); // DEBUG
 
-    // Ensure session is saved before responding
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.status(500).json({ message: "Session save failed" });
-      }
-      res.json({
-        message: "Login successful",
-        user: { first: user.first, last: user.last, email: user.email },
-      });
+    res.json({
+      message: "Login successful",
+      user: { first: user.first, last: user.last, email: user.email },
     });
   } catch (err) {
     // If it's an Error instance, get its message
