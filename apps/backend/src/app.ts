@@ -14,7 +14,7 @@ const app = express();
 // Fix CORS: allow frontend origin and handle preflight requests
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: `${process.env.FRONTEND_URL}`,
     credentials: true, // allow cookies
   })
 );
