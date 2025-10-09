@@ -11,7 +11,6 @@ image here
 What makes photobucket unique, is that our functionality centers around the visual completion system, where a user must upload or take a photo memory as evidence when marking a bucket list item as complete. These completed bucket list items are associated with those images and then moved to the **Bucket Gallery** so that you can revisit those bucket lists items you completed and have visual memories all in one place! The gallery is both a digital scrapbook, and a progress tracker which adds a more memorable experience. Built with TypeScript, React, Node.js, Express, and MongoDB, the application features secure authentication, responsive design with TailwindCSS, AceternityUI, cloud-based image storage through Cloudinary, and robust session management. Users can seamlessly navigate between different bucket lists, manage collaborators, customize bucket titles, and maintain persistent data across sessions, making PhotoBucket a comprehensive platform for turning dreams into documented realities.
 
 ## Instructions / User Manual 
------
 ### Hero Page
 image here 
 description here
@@ -37,7 +36,6 @@ images here
 description here
 
 ## Technologies
-----
 ### Frontend Technologies
 - **React**: Core UI framework for building component-based user interfaces and managing state across bucket lists and collaboration features
 - **TypeScript**: Provided type safety and enhanced development experience with strict typing for props, API responses, and data models
