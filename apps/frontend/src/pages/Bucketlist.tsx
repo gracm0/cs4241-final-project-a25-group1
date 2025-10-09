@@ -34,6 +34,7 @@ interface Collab {
   id: string;
   name: string;
   color: string;
+  isOwner?: boolean;
 }
 
 /* ---------- main component ---------- */
@@ -242,13 +243,6 @@ export default function BucketList() {
   );
 
   /* ---------------- collaborators ---------------- */
-  interface Collab {
-    id: string;
-    name: string;
-    color: string;
-    isOwner?: boolean;
-  }
-
   const [collabs, setCollabs] = useState<Collab[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
@@ -314,6 +308,8 @@ export default function BucketList() {
   };
 
   const canAddMore = collabs.length < 4;
+
+  const isCurrentUserOwner = collabs.find(c => c.id === "me")?.isOwner ?? false;
 
   const removeCollaborator = async (email: string) => {
     if (!user?.bucketOrder?.[activeBucketIndex]) return;
@@ -431,6 +427,8 @@ export default function BucketList() {
           );
         } catch (err) {
           console.error("Failed to save item:", err);
+        } finally {
+          delete editDebounceRef.current[iid];
         }
       }, 400);
 
@@ -758,7 +756,7 @@ export default function BucketList() {
                     key={c.id}
                     bg={c.color}
                     onRemove={
-                      c.id === "me" ? undefined : () => removeCollaborator(c.id)
+                      c.id === "me" || !isCurrentUserOwner ? undefined : () => removeCollaborator(c.id)
                     }
                   >
                     {initials(c.name)}
@@ -853,7 +851,7 @@ export default function BucketList() {
             )}
 
             <div className="mb-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-              💡 Anyone with this link can join your bucket list as a collaborator.
+              Anyone with this link can join your bucket list as a collaborator.
             </div>
 
             <div className="mb-3">
@@ -874,7 +872,7 @@ export default function BucketList() {
                     {c.isOwner && (
                       <span className="ml-1 text-xs text-gray-500">(Owner)</span>
                     )}
-                    {c.id !== "me" && !c.isOwner && (
+                    {c.id !== "me" && !c.isOwner && isCurrentUserOwner && (
                       <button
                         onClick={() => removeCollaborator(c.id)}
                         title="Remove"
