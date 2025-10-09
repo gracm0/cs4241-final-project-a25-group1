@@ -1,6 +1,9 @@
 {
   "name": "cs4241-final-project-a25-group1",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "workspaces": [
     "backend",
     "frontend"
@@ -9,7 +12,10 @@
     "dev:api": "npm run dev --workspace backend",
     "dev:client": "npm run dev --workspace frontend",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
-    "build": "npm run build --workspace backend && npm run build --workspace frontend"
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "install-backend": "npm install --workspace backend",
+    "install-frontend": "npm install --workspace frontend"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
