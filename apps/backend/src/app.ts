@@ -35,10 +35,11 @@ console.log("Session config:", {
 
 app.use(
   session({
-    name: "sessionId", // explicit session name
+    name: "connect.sid", // Use default express-session cookie name
     secret: process.env.SESSION_SECRET || "supersecretkey",
     resave: false,
-    saveUninitialized: true, // Changed to true to create session cookies
+    saveUninitialized: false, // Back to false for security
+    rolling: true, // Reset expiration on every response
     store: MongoStore.create({
       mongoUrl: `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.MONGO_HOST}/?retryWrites=true&w=majority&appName=Cluster0`,
       collectionName: "sessions",
@@ -47,7 +48,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // true only on HTTPS
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax", // Use lax for both dev and prod since we're serving from same domain
     },
   })
 );
