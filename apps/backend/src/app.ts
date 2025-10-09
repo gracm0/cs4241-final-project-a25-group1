@@ -42,6 +42,8 @@ console.log("Session config:", {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
 });
 
+app.set("trust proxy", 1);
+
 app.use(
   session({
     name: "connect.sid", // Use default express-session cookie name
