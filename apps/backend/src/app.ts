@@ -11,7 +11,6 @@ import connectDB from "./db";
 
 const app = express();
 
-// Fix CORS: allow frontend origin and handle preflight requests
 const allowedOrigins = process.env.NODE_ENV === "production" 
   ? [process.env.FRONTEND_URL || "https://photobucket.onrender.com/"]
   : ["http://localhost:5173", "http://localhost:10000"];
