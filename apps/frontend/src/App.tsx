@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import { Build } from "./pages/Build";
 import BucketList from "./pages/Bucketlist";
+import JoinBucket from "./pages/JoinBucket";
 
 export default function App() {
   return (
@@ -18,6 +19,9 @@ export default function App() {
 
       {/* Alias so deep links like /bucket/2 still work */}
       <Route path="/bucket/:id" element={<BucketList />} />
+
+      {/* In your main App.tsx or router configuration */}
+      <Route path="/join-bucket/:inviteCode" element={<JoinBucket />} />
 
       {/* Optional alias */}
       <Route path="/app" element={<Navigate to="/bucketlist" replace />} />

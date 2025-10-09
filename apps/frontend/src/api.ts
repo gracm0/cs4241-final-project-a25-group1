@@ -46,3 +46,37 @@ export function getCompletedItems(bucketId: string) {
     }
   ).then(json);
 }
+
+// collaboration functions
+export function generateInvite(bucketId: string) {
+  return fetch(`${BASE}/collab/generate-invite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ bucketId }),
+  }).then(json);
+}
+
+export function acceptInvite(inviteCode: string) {
+  return fetch(`${BASE}/collab/accept-invite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ inviteCode }),
+  }).then(json);
+}
+
+export function getCollaborators(bucketId: string) {
+  return fetch(`${BASE}/collab/collaborators/${encodeURIComponent(bucketId)}`, {
+    credentials: "include",
+  }).then(json);
+}
+
+export function removeCollaborator(bucketId: string, collaboratorEmail: string) {
+  return fetch(`${BASE}/collab/remove-collaborator`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ bucketId, collaboratorEmail }),
+  }).then(json);
+}

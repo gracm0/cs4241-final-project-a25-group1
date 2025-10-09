@@ -23,7 +23,7 @@ export default function InviteForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder={
-          disabled ? "Max collaborators reached" : "Add by name (e.g., Grace)"
+          disabled ? "Max collaborators reached" : "Add by email (e.g., johndoe@email.com)"
         }
         disabled={disabled}
         className="h-[42px] flex-1 rounded-lg border border-gray-200 bg-[#fafafa] px-3 text-[14px] outline-none disabled:opacity-70"
