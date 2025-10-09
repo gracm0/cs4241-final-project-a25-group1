@@ -1,9 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IBucketItem extends Document {
-  email: string;
-  bucketNumber: number;
-  bucketTitle?: string;
+  bucketId: string;
   title: string;
   desc: string;
   location: string;
@@ -15,9 +13,7 @@ export interface IBucketItem extends Document {
 
 const bucketItemSchema = new Schema<IBucketItem>( 
 {
-    email: { type: String, required: true }, // owner or collaborator email
-    bucketNumber: { type: Number, required: true, min: 1, max: 4 }, // which bucket (1–4)
-    bucketTitle: { type: String }, // optional title for the bucket
+    bucketId: { type: String, required: true }, // parent bucket
     title: { type: String, required: true },
     desc: { type: String, default: "" },
     location: { type: String, default: "" },

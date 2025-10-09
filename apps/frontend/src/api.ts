@@ -1,3 +1,4 @@
+// api.ts
 const BASE = import.meta.env.VITE_API_BASE || "/api";
 
 async function json<T>(res: Response): Promise<T> {
@@ -37,9 +38,9 @@ export function getCurrentUser() {
   }).then(json);
 }
 
-export function getCompletedItems(email: string) {
+export function getCompletedItems(bucketId: string) {
   return fetch(
-    `${BASE}/item-action?email=${encodeURIComponent(email)}&done=true`,
+    `${BASE}/item-action?bucketId=${encodeURIComponent(bucketId)}&done=true`,
     {
       credentials: "include",
     }

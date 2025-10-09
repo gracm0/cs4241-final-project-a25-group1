@@ -5,7 +5,6 @@ import path from "path";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import routes from "./routes";
-import bucketRoutes from "./routes/Item";
 import uploadRoutes from "./routes/Upload";
 import connectDB from "./db";
 
@@ -43,7 +42,6 @@ app.use(
 
 // API routes
 app.use("/api", routes);
-app.use("/api/bucket-items", bucketRoutes);
 app.use("/api/upload", uploadRoutes);
 
 // Serve frontend build (apps/frontend/dist)

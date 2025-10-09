@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+// Bucketlist.tsx
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   useNavigate,
   useParams,
@@ -26,6 +27,7 @@ interface UserType {
   first: string;
   last: string;
   email: string;
+  bucketOrder: string[];
 }
 
 interface Collab {
@@ -40,15 +42,6 @@ export default function BucketList() {
   const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const [q] = useSearchParams();
-
-  /* ---------------- bucket id ---------------- */
-  const activeBucket = useMemo(() => {
-    const fromParam = Number(id);
-    const fromQuery = Number(q.get("b"));
-    const n =
-      Number.isFinite(fromParam) && fromParam > 0 ? fromParam : fromQuery || 1;
-    return Math.min(Math.max(n, 1), 4);
-  }, [id, q]);
 
   /* ---------------- auth / profile menu ---------------- */
   const [user, setUser] = useState<UserType | null>(null);
@@ -100,22 +93,47 @@ export default function BucketList() {
     nav("/");
   }
 
+  /* ---------------- bucket index ---------------- */
+  const activeBucketIndex = useMemo(() => {
+    if (!user?.bucketOrder?.length) return 0;
+
+    const idxFromParam = id ? Number(id) - 1 : undefined;
+    const idxFromQuery = q.get("b") ? Number(q.get("b")) - 1 : 0;
+    return idxFromParam ?? idxFromQuery ?? 0;
+  }, [id, location.search, user]);
+
   /* ---------------- per-bucket title ---------------- */
   const [listTitle, setListTitle] = useState<string>("");
+  const activeBucketRef = useRef<number>(0);
+  useEffect(() => {
+    activeBucketRef.current = activeBucketIndex;
+  }, [activeBucketIndex]);
+
   const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.bucketOrder?.length) {
+      console.log("Skipping fetch: user not loaded or no buckets");
+      return;
+    }
 
-    // Fetch from server
+    const bucketId = user.bucketOrder[activeBucketIndex];
+
+    if (!bucketId) {
+      console.log(
+        "Skipping fetch: invalid index",
+        activeBucketIndex,
+        "bucketOrder:",
+        user.bucketOrder
+      );
+      return;
+    }
+
     const fetchTitle = async () => {
       try {
-        const res = await fetch(
-          `/api/item-action/get-bucket-title?bucketNumber=${activeBucket}&email=${user.email}`
-        );
+        const res = await fetch(`/api/bucket-action/single?bucketId=${bucketId}`);
         const data: { bucketTitle: string } = await res.json();
-        const title = data.bucketTitle ?? "";
-        setListTitle(title);
+        setListTitle(data.bucketTitle ?? sidebarTitles[activeBucketIndex] ?? "");
       } catch (err) {
         console.error("Failed to fetch bucket title:", err);
         setListTitle("");
@@ -123,7 +141,7 @@ export default function BucketList() {
     };
 
     fetchTitle();
-  }, [activeBucket, user?.email]);
+  }, [activeBucketIndex, user?.bucketOrder]);
 
   /* ---------------- Sidebar titles ---------------- */
   const [sidebarTitles, setSidebarTitles] = useState<string[]>([
@@ -139,8 +157,9 @@ export default function BucketList() {
 
       try {
         const res = await fetch(
-          `/api/item-action/get-all-bucket-titles?email=${user.email}`
+          `/api/bucket-action?email=${user.email}`
         );
+        // add a sort
         const data: { bucketTitles: string[] } = await res.json();
         const titles = data.bucketTitles.map(
           (title, index) => title || `Bucket ${index + 1}`
@@ -155,46 +174,72 @@ export default function BucketList() {
     };
 
     fetchAllTitles();
-  }, [user?.email, listTitle, activeBucket]);
+  }, [user?.email]);
 
-  const handleBucketTitleChange = (newTitle: string) => {
-    setListTitle(newTitle);
+  const handleBucketTitleChange = useCallback(
+    (newTitle: string) => {
+      console.log("handleBucketTitleChange called with:", newTitle);
 
-    // Update sidebar titles immediately for better UX
-    setSidebarTitles((prevTitles) => {
-      const newTitles = [...prevTitles];
-      newTitles[activeBucket - 1] = newTitle || `Bucket ${activeBucket}`;
-      return newTitles;
-    });
+      // Update local state immediately
+      setListTitle(newTitle);
 
-    if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
+      setSidebarTitles((prev) => {
+        const next = [...prev];
+        next[activeBucketIndex] = newTitle || `Bucket ${activeBucketIndex + 1}`;
+        return next;
+      });
 
-    titleDebounceRef.current = setTimeout(async () => {
-      if (!user?.email) return;
+      // Clear any existing debounce
+      if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
 
-      try {
-        const res = await fetch("/api/item-action/update-bucket-title", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: user.email,
-            bucketNumber: activeBucket,
-            bucketTitle: newTitle,
-          }),
-        });
-        const result = await res.json();
+      // Get the current bucketId safely
+      const bucketId = user?.bucketOrder?.[activeBucketIndex];
+      const email = user?.email;
 
-        if (!result.success) console.warn("Bucket title update failed");
-
-        // **Optional:** update local state for all items
-        setItems((prevItems) =>
-          prevItems.map((item) => ({ ...item, bucketTitle: newTitle }))
+      if (!bucketId || !email) {
+        console.log(
+          "Skipping fetch: bucketId or email missing",
+          bucketId,
+          email
         );
-      } catch (err) {
-        console.error("Failed to update bucket title:", err);
+        return;
       }
-    }, 400);
-  };
+
+      // Debounced POST
+      titleDebounceRef.current = setTimeout(async () => {
+        try {
+          console.log("Sending POST for bucketId", bucketId, "title", newTitle);
+
+          const res = await fetch("/api/bucket-action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bucketId, bucketTitle: newTitle }),
+          });
+
+          const result = await res.json();
+
+          if (!result.success) {
+            console.warn("Server rejected title update", result);
+            return;
+          }
+
+          // Update sidebar + main title with server-confirmed title
+          setSidebarTitles((prev) => {
+            const next = [...prev];
+            next[activeBucketIndex] = result.bucketTitle || newTitle;
+            return next;
+          });
+
+          setListTitle(result.bucketTitle || newTitle);
+        } catch (err) {
+          console.error("Failed to update bucket title:", err);
+        } finally {
+          titleDebounceRef.current = null;
+        }
+      }, 400);
+    },
+    [user, activeBucketIndex]
+  );
 
   /* ---------------- collaborators ---------------- */
   const [collabs, setCollabs] = useState<Collab[]>([]);
@@ -203,7 +248,7 @@ export default function BucketList() {
   useEffect(() => {
     if (!user?.email) return;
     try {
-      const raw = localStorage.getItem(`bucket:${activeBucket}:collabs`);
+      const raw = localStorage.getItem(`bucket:${activeBucketIndex}:collabs`);
       const fallback: Collab[] = [
         { id: "me", name: user.email, color: "#ff6b6b" },
       ];
@@ -211,16 +256,16 @@ export default function BucketList() {
     } catch {
       setCollabs([{ id: "me", name: user.email, color: "#ff6b6b" }]);
     }
-  }, [activeBucket, user?.email]);
+  }, [activeBucketIndex, user?.email]);
 
   useEffect(() => {
     try {
       localStorage.setItem(
-        `bucket:${activeBucket}:collabs`,
+        `bucket:${activeBucketIndex}:collabs`,
         JSON.stringify(collabs)
       );
     } catch {}
-  }, [collabs, activeBucket]);
+  }, [collabs, activeBucketIndex]);
 
   const canAddMore = collabs.length < 4;
   const addCollaborator = (raw: string) => {
@@ -249,8 +294,8 @@ export default function BucketList() {
     cid !== "me" && setCollabs((cs) => cs.filter((c) => c.id !== cid));
 
   const inviteUrl = user
-    ? `${window.location.origin}/bucket/${activeBucket}?invite=${btoa(
-        `${user.email}:${activeBucket}`
+    ? `${window.location.origin}/bucket/${activeBucketIndex}?invite=${btoa(
+        `${user.email}:${activeBucketIndex}`
       )}`
     : "";
 
@@ -270,12 +315,12 @@ export default function BucketList() {
 
   // Fetch ALL items (both done + not done) so we can sort and show completed at the bottom.
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.bucketOrder) return;
     const fetchItems = async () => {
       try {
         // no done filter → return every item for this bucket
         const res = await fetch(
-          `/api/item-action?bucketNumber=${activeBucket}&email=${user.email}`
+          `/api/item-action?bucketId=${user.bucketOrder[activeBucketIndex]}`
         );
         const data: BucketItem[] = await res.json();
         setItems(data.length ? data : [makeDefaultItem()]);
@@ -285,7 +330,7 @@ export default function BucketList() {
       }
     };
     fetchItems();
-  }, [activeBucket, user?.email]);
+  }, [activeBucketIndex, user?.bucketOrder]);
 
   const addItem = () => setItems((xs) => [...xs, makeDefaultItem()]);
 
@@ -293,10 +338,10 @@ export default function BucketList() {
     setItems((xs) => {
       const remaining = xs.filter((x) => x.id !== iid);
       const toDelete = xs.find((x) => x.id === iid);
-      if (!toDelete || !user?.email) return xs;
+      if (!toDelete || !user?.bucketOrder) return xs;
 
       fetch(
-        `/api/item-action?email=${user.email}&bucketNumber=${activeBucket}&id=${toDelete.id}`,
+        `/api/item-action?id=${toDelete.id}&bucketid=${user.bucketOrder[activeBucketIndex]}`,
         {
           method: "DELETE",
         }
@@ -317,7 +362,7 @@ export default function BucketList() {
         x.id === iid ? { ...x, ...patch } : x
       );
       const updatedItem = updatedItems.find((x) => x.id === iid);
-      if (!updatedItem || !user?.email) return xs;
+      if (!updatedItem || !user?.bucketOrder) return xs;
 
       if (editDebounceRef.current[iid])
         clearTimeout(editDebounceRef.current[iid]);
@@ -328,9 +373,7 @@ export default function BucketList() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               _id: updatedItem._id,
-              email: user.email,
-              bucketNumber: activeBucket,
-              bucketTitle: listTitle,
+              bucketId: user.bucketOrder[activeBucketIndex],
               title: updatedItem.title,
               desc: updatedItem.desc,
               location: updatedItem.location,
@@ -404,8 +447,6 @@ export default function BucketList() {
           done: true,
           completedAt,
           image: imageUrl,
-          email: user.email,
-          bucketNumber: activeBucket,
         }),
       });
       if (!res.ok) throw new Error("Failed to save completed item");
@@ -413,9 +454,9 @@ export default function BucketList() {
       // 2) Save image to gallery
       // Use sidebarTitles for the correct bucket title
       const galleryBucketTitle =
-        sidebarTitles[activeBucket - 1] ||
+        sidebarTitles[activeBucketIndex] ||
         listTitle ||
-        `Bucket ${activeBucket}`;
+        `Bucket ${activeBucketIndex + 1}`;
       await fetch("/api/gallery-image", {
         method: "POST",
         headers: {
@@ -433,7 +474,7 @@ export default function BucketList() {
 
       // 3) Refetch items from backend to sync UI
       const itemsRes = await fetch(
-        `/api/item-action?bucketNumber=${activeBucket}&email=${user.email}`
+        `/api/item-action?bucketId=${user.bucketOrder[activeBucketIndex]}`
       );
       const data = await itemsRes.json();
       setItems(data.length ? data : [makeDefaultItem()]);
@@ -501,7 +542,7 @@ export default function BucketList() {
 
   async function resetWholeList() {
     if (!confirm("Reset this bucket back to an empty list?")) return;
-    if (!user?.email) return; // exit if user/email not ready
+    if (!user?.bucketOrder) return; // exit if user/email not ready
 
     // client-side reset
     setItems([makeDefaultItem()]);
@@ -509,7 +550,7 @@ export default function BucketList() {
     // optional server reset (best-effort; ignore failure)
     try {
       await fetch(
-        `/api/item-action/reset-bucket?email=${encodeURIComponent(user?.email)}&bucketNumber=${activeBucket}`,
+        `/api/item-action/reset-bucket?bucketId=${encodeURIComponent(user.bucketOrder[activeBucketIndex])}`,
         { method: "DELETE" }
       );
     } catch (e) {
