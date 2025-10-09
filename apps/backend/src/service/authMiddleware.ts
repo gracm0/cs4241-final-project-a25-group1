@@ -4,6 +4,13 @@ import User from "../models/User";
 
 export async function getCurrentUser(req: Request, res: Response, next: NextFunction) {
   try {
+    console.log("=== AUTH MIDDLEWARE DEBUG ===");
+    console.log("Session ID:", req.sessionID);
+    console.log("Session object:", req.session);
+    console.log("User ID from session:", req.session?.userId);
+    console.log("Cookies:", req.headers.cookie);
+    console.log("=============================");
+    
     const userId = req.session?.userId;
     if (!userId) return res.status(401).json({ message: "Not logged in" });
 

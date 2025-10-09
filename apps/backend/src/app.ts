@@ -14,8 +14,12 @@ const app = express();
 // Fix CORS: allow frontend origin and handle preflight requests
 app.use(
   cors({
-    origin: `${process.env.FRONTEND_URL}`,
+    origin: process.env.NODE_ENV === "production" 
+      ? [process.env.FRONTEND_URL || "https://photobucket.onrender.com"]
+      : ["http://localhost:5173", "http://localhost:3000"],
     credentials: true, // allow cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   })
 );
 
@@ -23,8 +27,15 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Session middleware
+console.log("Session config:", {
+  nodeEnv: process.env.NODE_ENV,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+});
+
 app.use(
   session({
+    name: "sessionId", // explicit session name
     secret: process.env.SESSION_SECRET || "supersecretkey",
     resave: false,
     saveUninitialized: false,
@@ -34,8 +45,8 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production", // true only on HTTPS
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })

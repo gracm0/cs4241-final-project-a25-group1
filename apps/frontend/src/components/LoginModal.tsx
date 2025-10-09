@@ -41,8 +41,11 @@ export default function LoginModal({ open }: Props) {
         setError(data.message || "Login failed");
         return;
       }
-      // If login is successful, redirect
-      goToApp();
+      
+      // Add a small delay to ensure session is fully persisted before redirect
+      setTimeout(() => {
+        goToApp();
+      }, 200); // 200ms delay before redirecting
     } catch (err) {
       setError("Incorrect email or password");
     }
