@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cd apps && npm run build",
+    "start": "cd apps && npm start",
+    "install-deps": "cd apps && npm install"
   },
   "repository": {
     "type": "git",
@@ -13,9 +16,16 @@
   "private": true,
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^1.41.3",
+    "concurrently": "^9.2.1",
+    "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "mongoose": "^8.18.3",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "react-icons": "^5.5.0"
   },
   "devDependencies": {
