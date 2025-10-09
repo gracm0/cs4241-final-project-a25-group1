@@ -28,12 +28,18 @@ router.post("/", async (req, res) => {
       }
       console.log("Session successfully saved, ID:", req.sessionID);
       
-      // Let express-session handle the cookie automatically
-      // No manual cookie setting needed
+      // Add debugging for response headers
+      console.log("Response headers being set:", res.getHeaders());
+      
+      // Force set the cookie header explicitly for debugging
+      res.setHeader('Set-Cookie', [
+        `connect.sid=${req.sessionID}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=604800`
+      ]);
       
       res.json({
         message: "Login successful",
         user: { first: user.first, last: user.last, email: user.email },
+        sessionId: req.sessionID, // Include session ID in response for debugging
       });
     });
   } catch (err) {

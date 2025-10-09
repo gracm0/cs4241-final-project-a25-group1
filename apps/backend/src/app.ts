@@ -14,10 +14,18 @@ const app = express();
 // Fix CORS: allow frontend origin and handle preflight requests
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production" 
-      ? [process.env.FRONTEND_URL || "https://photobucket.onrender.com"]
-      : ["http://localhost:5173", "http://localhost:3000"],
-    credentials: true, // allow cookies
+    origin: (origin, callback) => {
+      const allowedOrigins = process.env.NODE_ENV === "production"
+        ? [process.env.FRONTEND_URL || "https://photobucket.onrender.com"]
+        : ["http://localhost:5173", "http://localhost:3000"];
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   })
@@ -48,7 +56,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // true only on HTTPS
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax", // Use lax for both dev and prod since we're serving from same domain
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Back to none for production
     },
   })
 );
