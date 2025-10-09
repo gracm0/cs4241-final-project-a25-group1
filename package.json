@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd apps && npm run build",
-    "start": "cd apps && npm start",
-    "install-deps": "cd apps && npm install"
+    "install-deps": "cd apps && npm install",
+    "build": "cd apps && npm install && npm run build",
+    "start": "cd apps && npm start"
   },
   "repository": {
     "type": "git",
@@ -26,13 +26,15 @@
     "mongoose": "^8.18.3",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/mongoose": "^5.11.96",
-    "@types/multer": "^2.0.0"
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.6.2"
   }
 }
