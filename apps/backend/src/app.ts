@@ -21,11 +21,10 @@ console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 
 app.use(
   cors({
-    origin: true, // Temporarily allow all origins for debugging
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-    exposedHeaders: ['Set-Cookie']
   })
 );
 
@@ -43,7 +42,7 @@ app.use((req, res, next) => {
 console.log("Session config:", {
   nodeEnv: process.env.NODE_ENV,
   secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+  sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax"
 });
 
 app.use(
@@ -59,7 +58,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60 * 24 * 7,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax", // Changed from "none" to "lax"
     },
   })
 );
