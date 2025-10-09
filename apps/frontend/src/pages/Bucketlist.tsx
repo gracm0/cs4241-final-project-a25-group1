@@ -17,7 +17,6 @@ import {
   useSidebar,
 } from "../components/SideNav";
 import BucketCard, { Priority, BucketItem } from "../components/BucketCard";
-import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import friend from "../assets/icons8-person-64.png";
 import trash from "../assets/icons8-trash-can-24.png";
@@ -340,6 +339,34 @@ export default function BucketList() {
     } catch (err) {
       console.error("Failed to remove collaborator:", err);
       alert("Failed to remove collaborator");
+    }
+  };
+
+  const leaveBucket = async () => {
+    if (!user?.bucketOrder?.[activeBucketIndex]) return;
+    
+    if (!confirm("Are you sure you want to leave this bucket? A new blank bucket will be created in its place.")) return;
+    
+    try {
+      const res = await fetch("/api/collab/leave-bucket", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          bucketId: user.bucketOrder[activeBucketIndex],
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // Refresh the page to load the new blank bucket
+        window.location.reload();
+      } else {
+        alert(data.message || "Failed to leave bucket");
+      }
+    } catch (err) {
+      console.error("Failed to leave bucket:", err);
+      alert("Failed to leave bucket");
     }
   };
 
@@ -779,6 +806,18 @@ export default function BucketList() {
                 >
                   <img src={friend} alt="Invite" className="h-6 w-6" />
                 </button>
+
+                {/*Leave bucket button (only for non-owners) */}
+                {!isCurrentUserOwner && (
+                  <button
+                    title="Leave this bucket"
+                    aria-label="Leave this bucket"
+                    onClick={leaveBucket}
+                    className="grid h-10 w-10 place-items-center justify-center rounded-full bg-orange-500 text-white font-bold hover:opacity-90"
+                  >
+                    ←
+                  </button> // TODO: make an icon
+                )}
 
                 <button
                   title="Clear this bucket (delete all items)"

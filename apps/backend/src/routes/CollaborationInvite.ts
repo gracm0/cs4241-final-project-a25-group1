@@ -89,8 +89,6 @@ router.post("/generate-invite", async (req, res) => {
     replaced: boolean
   }
 */
-// CollaborationInvite.ts - Update the accept-invite route
-
 router.post("/accept-invite", async (req, res) => {
   try {
     const { inviteCode, slotIndex } = req.body;
@@ -342,6 +340,90 @@ router.delete("/remove-collaborator", async (req, res) => {
   } catch (err) {
     console.error("Error removing collaborator:", err);
     res.status(500).json({ message: "Failed to remove collaborator" });
+  }
+});
+
+/* Leave a bucket as a collaborator (non-owners only)
+
+  DELETE /collab/leave-bucket
+
+  body:
+  {
+    bucketId: string;
+  }
+
+  response:
+  {
+    success: boolean;
+    message: string;
+    newBucketId: string;
+  }
+*/
+router.delete("/leave-bucket", async (req, res) => {
+  try {
+    const { bucketId } = req.body;
+    const userId = req.session?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const bucket = await Bucket.findOne({ bucketId });
+    if (!bucket) {
+      return res.status(404).json({ message: "Bucket not found" });
+    }
+
+    // Can't leave if you're the owner
+    if (bucket.ownerEmail === user.email) {
+      return res.status(403).json({ message: "Owner cannot leave their own bucket" });
+    }
+
+    // Must be a collaborator to leave
+    if (!bucket.collaborators.includes(user.email)) {
+      return res.status(400).json({ message: "You are not a collaborator on this bucket" });
+    }
+
+    // Remove user from collaborators
+    bucket.collaborators = bucket.collaborators.filter(e => e !== user.email);
+    await bucket.save();
+
+    // Find which slot this bucket is in
+    const index = user.bucketOrder.indexOf(bucketId);
+    if (index !== -1) {
+      // Generate new bucket ID for the blank bucket
+      const newBucketId = `bucket-${randomUUID()}`;
+      
+      // Create new blank bucket
+      const newBucket = new Bucket({
+        bucketId: newBucketId,
+        bucketTitle: "",
+        ownerEmail: user.email,
+        collaborators: [user.email],
+        inviteCode: null,
+        inviteExpiry: null,
+      });
+      await newBucket.save();
+      
+      // Replace with new blank bucket in their bucketOrder
+      user.bucketOrder[index] = newBucketId;
+      await user.save();
+
+      return res.json({ 
+        success: true, 
+        message: "Successfully left bucket",
+        newBucketId 
+      });
+    }
+
+    res.json({ success: true, message: "Successfully left bucket" });
+  } catch (err) {
+    console.error("Error leaving bucket:", err);
+    res.status(500).json({ message: "Failed to leave bucket" });
   }
 });
 
