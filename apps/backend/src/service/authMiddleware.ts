@@ -4,10 +4,6 @@ import User from "../models/User";
 
 export async function getCurrentUser(req: Request, res: Response, next: NextFunction) {
   try {
-    console.log("Session data:", req.session);
-    console.log("Session ID:", req.sessionID);
-    console.log("User ID from session:", req.session?.userId);
-    
     const userId = req.session?.userId;
     if (!userId) return res.status(401).json({ message: "Not logged in" });
 
@@ -17,7 +13,7 @@ export async function getCurrentUser(req: Request, res: Response, next: NextFunc
     (req as any).currentUser = user;
     next();
   } catch (err) {
-    console.error("Auth middleware error:", err);
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch user" });
   }
 }
