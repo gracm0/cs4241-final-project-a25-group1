@@ -7,6 +7,23 @@ interface BucketSlot {
   title: string;
   isEmpty: boolean;
   isOwner?: boolean;
+  oldBucketId?: string;
+}
+
+async function deleteBucketAndItems(bucketId: string) {
+  try {
+    const res = await fetch(`/api/bucket-action/delete?bucketId=${encodeURIComponent(bucketId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    
+    const result = await res.json();
+    if (!result.success) {
+      console.error("Failed to delete bucket:", result.message);
+    }
+  } catch (err) {
+    console.error("Error deleting bucket:", err);
+  }
 }
 
 export default function JoinBucket() {
@@ -78,6 +95,13 @@ export default function JoinBucket() {
     setStatus("joining");
 
     try {
+      // If replacing a non-empty bucket, delete it first
+      const bucketToReplace = currentBuckets[selectedSlot];
+      if (!bucketToReplace.isEmpty && bucketToReplace.oldBucketId) { // CHANGED
+        await deleteBucketAndItems(bucketToReplace.oldBucketId); // CHANGED
+      }
+
+      // Then proceed with joining
       const res = await fetch("/api/collab/accept-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

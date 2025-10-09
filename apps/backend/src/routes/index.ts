@@ -1,3 +1,4 @@
+// index.ts
 import { Router } from "express";
 import loginRouter from "./Login";
 import signupRouter from "./Signup";
@@ -6,7 +7,7 @@ import bucketRouter from "./BucketAction";
 import uploadRouter from "./Upload";
 import userRouter from "./CurrentUser";
 import logoutRouter from "./Logout";
-import galleryImageRouter from "./GalleryImage";
+import galleryImageRouter from "./GalleryImageAction";
 import collaborationRouter from "./CollaborationInvite";
 
 const router = Router();

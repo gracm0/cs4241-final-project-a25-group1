@@ -22,3 +22,10 @@ export async function updateBucketTitle( bucketId: string, bucketTitle: string )
   );
   return modified;
 }
+
+// delete a bucket by bucketId
+export async function deleteBucket(bucketId: string) {
+  const deleted = await Bucket.findOneAndDelete({ bucketId });
+  if (!deleted) return { success: false, message: "Bucket not found" };
+  return { success: true };
+}

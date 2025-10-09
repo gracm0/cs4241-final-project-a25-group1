@@ -38,15 +38,6 @@ export function getCurrentUser() {
   }).then(json);
 }
 
-export function getCompletedItems(bucketId: string) {
-  return fetch(
-    `${BASE}/item-action?bucketId=${encodeURIComponent(bucketId)}&done=true`,
-    {
-      credentials: "include",
-    }
-  ).then(json);
-}
-
 // collaboration functions
 export function generateInvite(bucketId: string) {
   return fetch(`${BASE}/collab/generate-invite`, {

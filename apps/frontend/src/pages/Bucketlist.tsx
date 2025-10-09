@@ -17,7 +17,6 @@ import {
   useSidebar,
 } from "../components/SideNav";
 import BucketCard, { Priority, BucketItem } from "../components/BucketCard";
-import InviteForm from "../components/InviteForm";
 import Avatar from "../components/Avatar";
 import friend from "../assets/icons8-person-64.png";
 import trash from "../assets/icons8-trash-can-24.png";
@@ -34,6 +33,7 @@ interface Collab {
   id: string;
   name: string;
   color: string;
+  isOwner?: boolean;
 }
 
 /* ---------- main component ---------- */
@@ -242,17 +242,11 @@ export default function BucketList() {
   );
 
   /* ---------------- collaborators ---------------- */
-  interface Collab {
-    id: string;
-    name: string;
-    color: string;
-    isOwner?: boolean;
-  }
-
   const [collabs, setCollabs] = useState<Collab[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Helper function for consistent colors
   function getCollaboratorColor(index: number): string {
@@ -291,6 +285,7 @@ export default function BucketList() {
   // Generate invite link when modal opens
   const handleOpenInvite = async () => {
     setInviteOpen(true);
+    setCopySuccess(false);
     if (!user?.bucketOrder?.[activeBucketIndex]) return;
     
     setLoadingInvite(true);
@@ -304,7 +299,9 @@ export default function BucketList() {
       const data = await res.json();
       
       if (data.success) {
-        setInviteUrl(data.inviteUrl);
+        const url = new URL(data.inviteUrl);
+        const frontendUrl = `${window.location.origin}${url.pathname}${url.search}`;
+        setInviteUrl(frontendUrl);
       }
     } catch (err) {
       console.error("Failed to generate invite:", err);
@@ -314,6 +311,8 @@ export default function BucketList() {
   };
 
   const canAddMore = collabs.length < 4;
+
+  const isCurrentUserOwner = collabs.find(c => c.id === "me")?.isOwner ?? false;
 
   const removeCollaborator = async (email: string) => {
     if (!user?.bucketOrder?.[activeBucketIndex]) return;
@@ -340,6 +339,34 @@ export default function BucketList() {
     } catch (err) {
       console.error("Failed to remove collaborator:", err);
       alert("Failed to remove collaborator");
+    }
+  };
+
+  const leaveBucket = async () => {
+    if (!user?.bucketOrder?.[activeBucketIndex]) return;
+    
+    if (!confirm("Are you sure you want to leave this bucket? A new blank bucket will be created in its place.")) return;
+    
+    try {
+      const res = await fetch("/api/collab/leave-bucket", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          bucketId: user.bucketOrder[activeBucketIndex],
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // Refresh the page to load the new blank bucket
+        window.location.reload();
+      } else {
+        alert(data.message || "Failed to leave bucket");
+      }
+    } catch (err) {
+      console.error("Failed to leave bucket:", err);
+      alert("Failed to leave bucket");
     }
   };
 
@@ -431,6 +458,8 @@ export default function BucketList() {
           );
         } catch (err) {
           console.error("Failed to save item:", err);
+        } finally {
+          delete editDebounceRef.current[iid];
         }
       }, 400);
 
@@ -501,13 +530,17 @@ export default function BucketList() {
         sidebarTitles[activeBucketIndex] ||
         listTitle ||
         `Bucket ${activeBucketIndex + 1}`;
+        
+      const bucketId = user.bucketOrder[activeBucketIndex];
+
       await fetch("/api/gallery-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
-          userEmail: user.email,
+          bucketId,
           bucketTitle: galleryBucketTitle,
           title: itemToUpdate.title,
           desc: itemToUpdate.desc,
@@ -578,7 +611,12 @@ export default function BucketList() {
         const rb = priorityRank((b.it as any).priority);
         if (ra !== rb) return ra - rb;
 
-        // 3) preserve original order for stability
+        // 3) alphabetically by title (case-sensitive)
+        const titleA = (a.it.title || "").toLowerCase();
+        const titleB = (b.it.title || "").toLowerCase();
+        if (titleA !== titleB) return titleA.localeCompare(titleB);
+
+        // 4) preserve original order for stability
         return a.idx - b.idx;
       })
       .map(({ it }) => it);
@@ -758,7 +796,7 @@ export default function BucketList() {
                     key={c.id}
                     bg={c.color}
                     onRemove={
-                      c.id === "me" ? undefined : () => removeCollaborator(c.id)
+                      c.id === "me" || !isCurrentUserOwner ? undefined : () => removeCollaborator(c.id)
                     }
                   >
                     {initials(c.name)}
@@ -772,6 +810,18 @@ export default function BucketList() {
                 >
                   <img src={friend} alt="Invite" className="h-6 w-6" />
                 </button>
+
+                {/*Leave bucket button (only for non-owners) */}
+                {!isCurrentUserOwner && (
+                  <button
+                    title="Leave this bucket"
+                    aria-label="Leave this bucket"
+                    onClick={leaveBucket}
+                    className="grid h-10 w-10 place-items-center justify-center rounded-full bg-orange-500 text-white font-bold hover:opacity-90"
+                  >
+                    ←
+                  </button> // TODO: make an icon
+                )}
 
                 <button
                   title="Clear this bucket (delete all items)"
@@ -820,7 +870,10 @@ export default function BucketList() {
         <>
           <div
             className="fixed inset-0 z-[9998] bg-[rgba(0,0,0,0.4)] backdrop-blur-[3px]"
-            onClick={() => setInviteOpen(false)}
+            onClick={() => {
+              setInviteOpen(false);
+              setCopySuccess(false);
+            }}
           />
           <div className="fixed left-1/2 top-1/2 z-[9999] w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-black/10 bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.25)]">
             <h3 className="mb-2 text-[20px] font-extrabold">
@@ -845,15 +898,17 @@ export default function BucketList() {
                   className="h-[42px] rounded-lg bg-[#111827] px-4 text-white hover:bg-[#1f2937]"
                   onClick={() => {
                     navigator.clipboard.writeText(inviteUrl);
+                    setCopySuccess(true);
+                    setTimeout(() => setCopySuccess(false), 2000);
                   }}
                 >
-                  Copy
+                  {copySuccess ? "Copied" : "Copy"}
                 </button>
               </div>
             )}
 
             <div className="mb-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-              💡 Anyone with this link can join your bucket list as a collaborator.
+              Anyone with this link can join your bucket list as a collaborator.
             </div>
 
             <div className="mb-3">
@@ -874,7 +929,7 @@ export default function BucketList() {
                     {c.isOwner && (
                       <span className="ml-1 text-xs text-gray-500">(Owner)</span>
                     )}
-                    {c.id !== "me" && !c.isOwner && (
+                    {c.id !== "me" && !c.isOwner && isCurrentUserOwner && (
                       <button
                         onClick={() => removeCollaborator(c.id)}
                         title="Remove"
@@ -896,7 +951,10 @@ export default function BucketList() {
             <div className="mt-4 text-right">
               <button
                 className="rounded-lg bg-[#111827] px-3.5 py-2 text-white hover:bg-[#1f2937]"
-                onClick={() => setInviteOpen(false)}
+                onClick={() => {
+                  setInviteOpen(false);
+                  setCopySuccess(false);
+                }}
               >
                 Done
               </button>
