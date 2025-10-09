@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
     console.log("Session after login:", req.session); // DEBUG
     console.log("Session ID:", req.sessionID); // DEBUG
 
-    // Ensure session is saved and cookie is set before responding
+    // Ensure session is saved before responding
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
@@ -28,21 +28,13 @@ router.post("/", async (req, res) => {
       }
       console.log("Session successfully saved, ID:", req.sessionID);
       
-      // Explicitly set the session cookie in the response
-      res.cookie('sessionId', req.sessionID, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      });
+      // Let express-session handle the cookie automatically
+      // No manual cookie setting needed
       
-      // Add a small delay to ensure session is fully persisted
-      setTimeout(() => {
-        res.json({
-          message: "Login successful",
-          user: { first: user.first, last: user.last, email: user.email },
-        });
-      }, 100); // 100ms delay
+      res.json({
+        message: "Login successful",
+        user: { first: user.first, last: user.last, email: user.email },
+      });
     });
   } catch (err) {
     // If it's an Error instance, get its message
