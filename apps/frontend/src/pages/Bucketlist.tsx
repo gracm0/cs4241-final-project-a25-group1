@@ -412,7 +412,7 @@ export default function BucketList() {
       if (!toDelete || !user?.bucketOrder) return xs;
 
       fetch(
-        `/api/item-action?id=${toDelete.id}&bucketid=${user.bucketOrder[activeBucketIndex]}`,
+        `/api/item-action?id=${toDelete.id}&bucketId=${user.bucketOrder[activeBucketIndex]}`,
         {
           method: "DELETE",
         }
