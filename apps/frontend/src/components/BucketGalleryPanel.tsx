@@ -39,7 +39,6 @@ function transformBucketItemToPhoto(item: any): Photo | null {
     extra: {
       location: item.location || "",
       priority: item.priority || "",
-      bucketNumber: item.bucketNumber || "",
       bucketTitle: item.bucketTitle || "",
     },
   };
@@ -140,9 +139,6 @@ export default function BucketGalleryPanel({
             ? new Date(img.completedAt).toISOString().slice(0, 10)
             : new Date(img.createdAt).toISOString().slice(0, 10),
           createdAt: img.createdAt || new Date().toISOString(),
-          extra: {
-            bucketNumber: img.bucketNumber,
-          },
         }));
         setPhotos(transformedPhotos);
       } catch (err) {

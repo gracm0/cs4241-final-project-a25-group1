@@ -1,4 +1,4 @@
-import User, { UserDocument } from '../models/User';
+import User, { UserDocument } from '../models/user';
 
 export async function register(first: string, last: string, email: string, password: string) {
   const existing: UserDocument | null = await User.findOne({ email: email.toLowerCase().trim() });

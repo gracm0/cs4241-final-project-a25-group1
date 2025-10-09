@@ -1,72 +1,60 @@
 import { Router } from "express";
 import {
-  getItems,
+  getAllItems,
   getAllDoneItems,
   saveItem,
   deleteItem,
-  updateManyItems,
-  getBucketTitle,
-  getAllBucketTitles,
   deleteAllItemsInBucket,
-} from "../controllers/bucketController";
+} from "../controllers/bucketItemController";
 
 const router = Router();
 
 // assumes calls include required parameters
 
-// GET /item-action?email={...}&bucketNumber={...}
-// GET /item-action?email={...}&done=true (for completed items)
+// Get all items from a bucket
+// GET /item-action?bucketId={...}
+// Optional query: done=true to filter completed items
 router.get("/", async (req, res) => {
   try {
-    const { email, bucketNumber, done } = req.query;
+    const { bucketId, done } = req.query;
 
-    if (done === "true") {
-      // Fetch all completed items for the user
-      const items = await getAllDoneItems(email as string);
-
-      console.log("Fetched completed items:", items); // <-- debug
-
-      if (!Array.isArray(items)) {
-        console.error("getAllDoneItems did not return an array");
-        return res
-          .status(500)
-          .json({ error: "Invalid return from getAllDoneItems" });
-      }
-
-      const itemsWithId = items.map((item: any) => ({
-        ...item.toObject(),
-        id: item._id.toString(),
-      }));
-      return res.json(itemsWithId);
-    } else {
-      // Fetch items for specific bucket
-      const items = await getItems(email as string, Number(bucketNumber));
-      // Ensure each item has an 'id' property for React key
-      const itemsWithId = items.map((item: any) => ({
-        ...item.toObject(),
-        id: item._id.toString(),
-      }));
-      return res.json(itemsWithId);
+    if (!bucketId || typeof bucketId !== "string") {
+      return res.status(400).json({ error: "bucketId is required" });
     }
+
+    let items;
+    if (done === "true") {
+      items = await getAllDoneItems(bucketId);
+    } else {
+      items = await getAllItems(bucketId);
+    }
+
+    const itemsWithId = items.map((item: any) => ({
+      ...item.toObject(),
+      id: item._id.toString(),
+    }));
+
+    res.json(itemsWithId);
   } catch (err) {
     console.error("Error fetching items:", err);
     res.status(500).json({ error: "Failed to fetch items" });
   }
 });
 
-/* POST /item-action
-  parameters: 
-  email: string;
-  bucketNumber: number;
-  bucketTitle?: string;
+/* Creates or updates a bucket item
+
+  POST /item-action
+
+  body: 
+  _id
+  bucketId: string;
   title: string;
   desc: string;
   location: string;
   priority: "high" | "med" | "low" | "";
   done: boolean;
-  completedAt?: Date; // if done is true
-  image?: string; // if done is true
-}
+  completedAt?: Date;
+  image?: string;
 */
 router.post("/", async (req, res) => {
   try {
@@ -77,74 +65,37 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE /item-action?bucketNumber={...}&title={...}
-// parameters: bucketNumber, title
+// Delete a single bucket item by _id and bucketId
+// DELETE /item-action?id={...}&bucketId={...}
 router.delete("/", async (req, res) => {
   try {
-    const { email, bucketNumber, id } = req.query;
-    const result = await deleteItem(
-      email as string,
-      Number(bucketNumber),
-      id as string
-    );
+    const { id, bucketId} = req.query;
+
+    if (!id || !bucketId || typeof bucketId !== "string") {
+      return res.status(400).json({ error: "id and bucketId are required" });
+    }
+
+    const result = await deleteItem(bucketId, id as string);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to delete item" });
   }
 });
 
-// DELETE /item-action/reset-bucket?email={...}&bucketNumber={...}
-// parameters: bucketNumber, title
+// Delete all items in a specific bucket
+// DELETE /item-action/reset-bucket?bucketId={...}
 router.delete("/reset-bucket", async (req, res) => {
   try {
-    const { email, bucketNumber } = req.query;
-    const result = await deleteAllItemsInBucket(
-      email as string,
-      Number(bucketNumber)
-    );
+    const { bucketId } = req.query;
+
+    if (!bucketId || typeof bucketId !== "string") {
+      return res.status(400).json({ error: "bucketId is required" });
+    }
+
+    const result = await deleteAllItemsInBucket(bucketId);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to delete all items" });
-  }
-});
-
-// POST /item-action/update-bucket-title
-router.post("/update-bucket-title", async (req, res) => {
-  try {
-    const { email, bucketNumber, bucketTitle } = req.body;
-    const result = await updateManyItems(
-      email as string,
-      Number(bucketNumber),
-      bucketTitle as string
-    );
-    res.json({ success: true, modifiedCount: result.modifiedCount });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to update bucket title" });
-  }
-});
-
-// GET /item-action/get-bucket-title?email={...}&bucketNumber={...}
-router.get("/get-bucket-title", async (req, res) => {
-  try {
-    const { email, bucketNumber } = req.query;
-    const bucketTitle = await getBucketTitle(
-      email as string,
-      Number(bucketNumber)
-    );
-    res.json({ bucketTitle });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch bucket title" });
-  }
-});
-
-// GET /item-action/get-all-bucket-titles?email={...}
-router.get("/get-all-bucket-titles", async (req, res) => {
-  try {
-    const { email } = req.query;
-    const bucketTitles = await getAllBucketTitles(email as string);
-    res.json({ bucketTitles });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch bucket titles" });
   }
 });
 
