@@ -11,12 +11,9 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // save user info in session and force session creation
+    // Save user info in session and force session creation
     req.session.userId = user._id.toString();
-    
-    // Explicitly force session initialization by marking it as modified
     req.session.isLoggedIn = true;
-    
     console.log("Session after login:", req.session); // DEBUG
     console.log("Session ID:", req.sessionID); // DEBUG
 
@@ -27,19 +24,9 @@ router.post("/", async (req, res) => {
         return res.status(500).json({ message: "Session save failed" });
       }
       console.log("Session successfully saved, ID:", req.sessionID);
-      
-      // Add debugging for response headers
-      console.log("Response headers being set:", res.getHeaders());
-      
-      // Force set the cookie header explicitly for debugging
-      res.setHeader('Set-Cookie', [
-        `connect.sid=${req.sessionID}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=604800`
-      ]);
-      
       res.json({
         message: "Login successful",
         user: { first: user.first, last: user.last, email: user.email },
-        sessionId: req.sessionID, // Include session ID in response for debugging
       });
     });
   } catch (err) {
