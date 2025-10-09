@@ -1,7 +1,7 @@
 // CollaborationInvite.ts
 import { Router } from "express";
 import { Bucket } from "../models/bucket";
-import User from "../models/user";
+import User from "../models/User";
 import crypto, { randomUUID } from "crypto";
 
 const router = Router();

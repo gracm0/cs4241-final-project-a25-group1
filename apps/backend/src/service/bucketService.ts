@@ -1,4 +1,4 @@
-import User from "../models/user";
+import User from "../models/User";
 import { Bucket } from "../models/bucket";
 
 export async function getUserBucketTitles(email: string): Promise<string[]> {

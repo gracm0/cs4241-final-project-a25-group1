@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../models/user";
+import User from "../models/User";
 
 export async function getCurrentUser(req: Request, res: Response, next: NextFunction) {
   try {
