@@ -11,38 +11,43 @@ What makes photobucket unique, is that our functionality centers around the visu
 ## Instructions / User Manual 
 ### Hero Page
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 00 31 PM" src="https://github.com/user-attachments/assets/6bccc08e-73ee-4c03-aaf6-d790d4805305" />
-description here
+This is the animated hero page! You can either log in or sign up
 
 ### Login and Signup 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 00 47 PM" src="https://github.com/user-attachments/assets/3984b707-4684-4be1-9d32-2703255492e5" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 00 52 PM" src="https://github.com/user-attachments/assets/e9959e2d-09a3-4dfb-b555-95fe4257d48d" />
-
-description here 
+For sign up: To begin using our application you should sign up. You be prompted to enter a first and last name, along with your email and a password of choice. 
+For log in: You will just have to input the email and password you used to sign up with.
 
 ### Dashboard/Main Page
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 01 39 PM" src="https://github.com/user-attachments/assets/19a5f847-007f-41a5-bf6d-d4531481d074" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 01 42 PM" src="https://github.com/user-attachments/assets/92c302ca-1e02-4604-8002-e1c0bed47262" />
-description here 
+You will be navigated to the intial page when you first sign up or log in. This is your first bucket! There is a sidebar that navigates you to the other four empty bucket lists. You can start typing in any of the areas! 
 
 ### Adding and Completing Items 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 02 31 PM" src="https://github.com/user-attachments/assets/62b375e4-7bfa-425f-a66c-c6fc05cb72bf" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 02 38 PM" src="https://github.com/user-attachments/assets/a4c272a4-b4d9-4fa3-b1c8-8e863937eaa6" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 05 49 PM" src="https://github.com/user-attachments/assets/303ec4b8-50d0-4c8d-a1bb-176156232fe3" />
 
-description here 
+- Start with naming your bucket list and inputting your first bucket list item. You can add title, description, location and click your priority of the task. Pink is high, yellow is medium and green is low.
+- To keep adding items, use the bottom right add button
+- To complete that item, click on the left check circle. You will be prompted with the completion modal. You need to enter in a date manually in the form of MM/DD/YY then you can choose to either upload or take a photo! try both, but uploading a photo is good for when u forgot to complete the item in the moment, but taking a photo is better for real time memory completion!
+- you will then see a preview of your photo where you can then decide to cancel or mark your item as done!
+- The item will be crossed off and will go to the bottom of your list
+- You have the option to delete the item when you want, or you can wait till you complete all the tasks on your bucket list to clear the whole list using the trash can reset button on the top right corner
 
 ### Bucket Gallery 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 41 57 PM" src="https://github.com/user-attachments/assets/c92b670f-8e72-4965-87c0-16c975c57cc1" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 42 05 PM" src="https://github.com/user-attachments/assets/5f40c1ba-8cd6-4b86-8198-85db6d94d560" />
 
-description here
+- Go to the sidebar, you will see at the bottom there is a tab that is called Bucket Gallery and if you click there it will show up with the photos you submitted and they are sorted by date of completion. If you hover over the image, it will tell you the title, description, date completed and the bucket title!
 
 ### Collaboration 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 02 24 PM" src="https://github.com/user-attachments/assets/d329075f-9547-40bd-b6de-158f159e91ab" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 33 PM" src="https://github.com/user-attachments/assets/35fc171e-0580-4c0f-9932-86580394814b" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 44 PM" src="https://github.com/user-attachments/assets/53d0b074-26bd-4bd6-9f17-7cb123b779f3" />
 
-description here
+- For collaboration, you can click the top right person in each bucket and a modal will pop up with a link that you can copy and send to someone who is also logged in! Then you can collaborate on the same bucket. You will get prompted to replace one of your four buckets before you get added to the list. 
 
 ## Technologies
 ### Frontend Technologies
