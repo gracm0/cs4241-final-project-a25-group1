@@ -92,7 +92,7 @@ You will be navigated to the intial page when you first sign up or log in. This 
 
 - **Grace**: Implemented the functionality of the collaboration aspect. Set up backend and database for storage of information. Initial log in 
 
-- **Nia**: Implemented the image uploader modal, made initial design for the pages and components. 
+- **Nia**: Set up the environment for the project at first, like the core files Bucketlist.tsx, Home.tsx, and the starter files. Implemented the image uploader modal, made initial design for the pages and components. Essentially, set the foundation for the project on WebStorm. 
 
 - **Together**: A majority of what we worked on, all of us worked on it together in different pieces. With a majority of the things we implemented 
 
