@@ -247,6 +247,7 @@ export default function BucketList() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Helper function for consistent colors
   function getCollaboratorColor(index: number): string {
@@ -285,6 +286,7 @@ export default function BucketList() {
   // Generate invite link when modal opens
   const handleOpenInvite = async () => {
     setInviteOpen(true);
+    setCopySuccess(false);
     if (!user?.bucketOrder?.[activeBucketIndex]) return;
     
     setLoadingInvite(true);
@@ -298,7 +300,9 @@ export default function BucketList() {
       const data = await res.json();
       
       if (data.success) {
-        setInviteUrl(data.inviteUrl);
+        const url = new URL(data.inviteUrl);
+        const frontendUrl = `${window.location.origin}${url.pathname}${url.search}`;
+        setInviteUrl(frontendUrl);
       }
     } catch (err) {
       console.error("Failed to generate invite:", err);
@@ -818,7 +822,10 @@ export default function BucketList() {
         <>
           <div
             className="fixed inset-0 z-[9998] bg-[rgba(0,0,0,0.4)] backdrop-blur-[3px]"
-            onClick={() => setInviteOpen(false)}
+            onClick={() => {
+              setInviteOpen(false);
+              setCopySuccess(false);
+            }}
           />
           <div className="fixed left-1/2 top-1/2 z-[9999] w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-black/10 bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.25)]">
             <h3 className="mb-2 text-[20px] font-extrabold">
@@ -843,9 +850,11 @@ export default function BucketList() {
                   className="h-[42px] rounded-lg bg-[#111827] px-4 text-white hover:bg-[#1f2937]"
                   onClick={() => {
                     navigator.clipboard.writeText(inviteUrl);
+                    setCopySuccess(true);
+                    setTimeout(() => setCopySuccess(false), 2000);
                   }}
                 >
-                  Copy
+                  {copySuccess ? "Copied" : "Copy"}
                 </button>
               </div>
             )}
@@ -894,7 +903,10 @@ export default function BucketList() {
             <div className="mt-4 text-right">
               <button
                 className="rounded-lg bg-[#111827] px-3.5 py-2 text-white hover:bg-[#1f2937]"
-                onClick={() => setInviteOpen(false)}
+                onClick={() => {
+                  setInviteOpen(false);
+                  setCopySuccess(false);
+                }}
               >
                 Done
               </button>
