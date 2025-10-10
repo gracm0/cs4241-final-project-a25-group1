@@ -39,14 +39,14 @@ You will be navigated to the intial page when you first sign up or log in. This 
 ### Bucket Gallery 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 41 57 PM" src="https://github.com/user-attachments/assets/c92b670f-8e72-4965-87c0-16c975c57cc1" />
 <img width="15<img width="1920" height="1080" alt="Screenshot 2025-10-10 111917" src="https://github.com/user-attachments/assets/58903f81-3dfd-4cf0-bcc5-d285f6ceb037" />
-12" height="829" alt="Screenshot 2025-10-09 at 1 42 05 PM" src="https://github.com/user-attachments/assets/5f40c1ba-8cd6-4b86-8198-85db6d94d560" />
 
 - Go to the sidebar, you will see at the bottom there is a tab that is called Bucket Gallery and if you click there, it will populate with the photos you submitted. They are sorted by date of completion. If you hover over the image, it will tell you the title, description, date completed and the bucket title!
 - You can search by title and description using the search bar in the top right.
 
 ### Collaboration 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 44 PM" src="https://github.com/user-attachments/assets/53d0b074-26bd-4bd6-9f17-7cb123b779f3" />
-
+<img width="1920" height="1080" alt="Screenshot 2025-10-10 111917" src="https://github.com/user-attachments/assets/e1f662e7-bf76-4d97-bf63-5288f3f9175d" />
+<img width="1920" height="1080" alt="Screenshot 2025-10-10 112213" src="https://github.com/user-attachments/assets/f31dcbb9-71a3-4982-b01b-34b2bef783b0" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 33 PM" src="https://github.com/user-attachments/assets/35fc171e-0580-4c0f-9932-86580394814b" />
 
 - For collaboration, you can click the top right person in each bucket and a modal will pop up with a link that you can copy and send to someone who is also logged in! Then you can collaborate on the same bucket. 
