@@ -4,7 +4,7 @@ Team 1: Amanda Longo, Grace Mahoney, Nia Junod
 Link to PhotoBucket App: https://photobucket.onrender.com
 
 ## General description
-**PhotoBucket** is a collaborative bucket list web application that allows users to create, manage and share their life goals with their friends or family. Users can sign up and organize their goals within 4 custom bucket lists. Each bucket list contains individual items with descriptions, locations, priority levels and completion status, similar to a regular to do list. Our collaboration feature allows users to invite up to 4 people to their bucket list to work towards the same goals and create memories together. The collaboration aspect uses real time editing so that users can work at the same time to add and edit their goals. 
+**PhotoBucket** is a collaborative bucket list web application that allows users to create, manage and share their life goals with their friends or family. Users can sign up and organize their goals within 4 custom bucket lists. Each bucket list contains individual items with descriptions, locations, priority levels and completion status, similar to a regular to do list. Our collaboration feature allows users to invite up to 3 additional people to their bucket list to work towards the same goals and create memories together. The collaboration aspect uses real time editing so that users can work at the same time to add and edit their goals. 
 
 What makes photobucket unique, is that our functionality centers around the visual completion system, where a user must upload or take a photo memory as evidence when marking a bucket list item as complete. These completed bucket list items are associated with those images and then moved to the **Bucket Gallery** so that you can revisit those bucket lists items you completed and have visual memories all in one place! The gallery is both a digital scrapbook, and a progress tracker which adds a more memorable experience. Built with TypeScript, React, Node.js, Express, and MongoDB, the application features secure authentication, responsive design with TailwindCSS, AceternityUI, cloud-based image storage through Cloudinary, and robust session management. Users can seamlessly navigate between different bucket lists, manage collaborators, customize bucket titles, and maintain persistent data across sessions, making PhotoBucket a comprehensive platform for turning dreams into documented realities.
 
@@ -31,23 +31,27 @@ You will be navigated to the intial page when you first sign up or log in. This 
 
 - Start with naming your bucket list and inputting your first bucket list item. You can add title, description, location and click your priority of the task. Pink is high, yellow is medium and green is low.
 - To keep adding items, use the bottom right add button
-- To complete that item, click on the left check circle. You will be prompted with the completion modal. You need to enter in a date manually in the form of MM/DD/YY then you can choose to either upload or take a photo! try both, but uploading a photo is good for when u forgot to complete the item in the moment, but taking a photo is better for real time memory completion!
-- you will then see a preview of your photo where you can then decide to cancel or mark your item as done!
+- To complete that item, click on the left check circle. You will be prompted with the completion modal. You need to enter in a date manually in the form of MM/DD/YYYY then you can choose to either upload or take a photo! Try both, but uploading a photo is good for when you forgot to complete the item in the moment, but taking a photo is better for real time memory completion!
+- You will then see a preview of your photo where you can then decide to cancel or mark your item as done!
 - The item will be crossed off and will go to the bottom of your list
-- You have the option to delete the item when you want, or you can wait till you complete all the tasks on your bucket list to clear the whole list using the trash can reset button on the top right corner
+- You have the option to delete the item when you want, or you can wait until you complete all the tasks on your bucket list to clear the whole list using the trash can reset button on the top right corner
 
 ### Bucket Gallery 
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 41 57 PM" src="https://github.com/user-attachments/assets/c92b670f-8e72-4965-87c0-16c975c57cc1" />
-<img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 42 05 PM" src="https://github.com/user-attachments/assets/5f40c1ba-8cd6-4b86-8198-85db6d94d560" />
+<img width="15<img width="1920" height="1080" alt="Screenshot 2025-10-10 111917" src="https://github.com/user-attachments/assets/58903f81-3dfd-4cf0-bcc5-d285f6ceb037" />
+12" height="829" alt="Screenshot 2025-10-09 at 1 42 05 PM" src="https://github.com/user-attachments/assets/5f40c1ba-8cd6-4b86-8198-85db6d94d560" />
 
-- Go to the sidebar, you will see at the bottom there is a tab that is called Bucket Gallery and if you click there it will show up with the photos you submitted and they are sorted by date of completion. If you hover over the image, it will tell you the title, description, date completed and the bucket title!
+- Go to the sidebar, you will see at the bottom there is a tab that is called Bucket Gallery and if you click there, it will populate with the photos you submitted. They are sorted by date of completion. If you hover over the image, it will tell you the title, description, date completed and the bucket title!
+- You can search by title and description using the search bar in the top right.
 
 ### Collaboration 
-<img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 02 24 PM" src="https://github.com/user-attachments/assets/d329075f-9547-40bd-b6de-158f159e91ab" />
-<img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 33 PM" src="https://github.com/user-attachments/assets/35fc171e-0580-4c0f-9932-86580394814b" />
 <img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 44 PM" src="https://github.com/user-attachments/assets/53d0b074-26bd-4bd6-9f17-7cb123b779f3" />
 
-- For collaboration, you can click the top right person in each bucket and a modal will pop up with a link that you can copy and send to someone who is also logged in! Then you can collaborate on the same bucket. You will get prompted to replace one of your four buckets before you get added to the list. 
+<img width="1512" height="829" alt="Screenshot 2025-10-09 at 1 11 33 PM" src="https://github.com/user-attachments/assets/35fc171e-0580-4c0f-9932-86580394814b" />
+
+- For collaboration, you can click the top right person in each bucket and a modal will pop up with a link that you can copy and send to someone who is also logged in! Then you can collaborate on the same bucket. 
+- Invited collaborators must log in first and then follow the link. They will get prompted to replace one of your four buckets before you get added to the list. That bucket will be deleted forever.
+- After invitation, collaborators have the option to leave if they click the arrow to the left of the reset button. Owners have the option to remove a collaborator by clicking the 'x' on the collaborators profile icon or by opening the collaboration modal and clicking the 'x' next to their name.
 
 ## Technologies
 ### Frontend Technologies
@@ -82,19 +86,19 @@ You will be navigated to the intial page when you first sign up or log in. This 
 - **Custom Components**: Reusable components (BucketCard, Avatar, Modal components) built with TypeScript interfaces
 
 ## Challenges
-- **Bugs**: We have a lot of various bugs that come up and we were unable to fix all of them within the scope of the project, they aren't huge bugs but the application is definitely still a little buggy. we would fix some and then more would be found so we focused on the main functionalities and makeing sure they work
-- **Implementation of collaboration**: this was one of the more difficult parts of the application, collaboration implementation was a challenge
-- **Scale**: the scale of our project may have been a little ambitious but we did start early so we think we did pretty well considering how busy we all were and how much time we spent on it
-- **Our personal collaboration as a team & deployment**: We realized there was a lot of miscommunication when we were just trying to do this while texting, but we were able to make the better progress when we met in person. deployment took us 3 hours because we had to change all of our dependencies to prod and we also were having issues with the implementation or lack of our session id and cookies. but we ended up figuring it out!!! 
+- **Bugs**: We have a lot of various bugs that come up and we were unable to fix all of them within the scope of the project. They aren't huge bugs, but the application is definitely still a little buggy. We would fix some and then more would be found, so we focused on the main functionalities and ensuring they work as intended.
+- **Implementation of collaboration**: This was one of the more difficult parts of the application, collaboration implementation was a challenge. We had issues with the database as we had not accounted for multiple users being able to access multiple items. In the end we had to refactor the database structure by splitting the original collection (users and bucket items) into four distinct collections to improve organization and scalability.
+- **Scale**: The scale of our project may have been a little ambitious, but we did start early. We think we did pretty well considering how busy we all were and how much time we spent on it.
+- **Our personal collaboration as a team & deployment**: We realized there was a lot of miscommunication when we were just trying to do this while texting, but we were able to make the better progress when we met in person. Deployment took us 3 hours because we had to change all of our dependencies to prod, and we also were having issues with the implementation or lack of our session id and cookies. We ended up figuring it out!!!
 
 ## Contributions
 - **Amanda**: Came up with the idea for PhotoBucket and created the Figma mockup and Style Guide for the application before development. Implemented the fetching of storage for the images in the Bucket Gallery so they are store per user and not locally. Implemented the responsive and animated UI aspects (The animated sidebar, the button components), redeveloped the UI after initial implementation that Nia did, to match the aesthetic more to fit the Figma Mockup we had. Completed the README, edited the video and did final submission. 
 
-- **Grace**: Implemented the functionality of the collaboration aspect. Set up backend and database for storage of information. Initial log in 
+- **Grace**: Engineered the collaboration features, enabling real-time interaction between users. Designed and implemented the backend architecture and database schema for storing user data and images with Atlas MongoDB and Cloudinary. Developed secure authentication, login/signup flows, and middleware to enforce access control and data integrity across the application.
 
 - **Nia**: Set up the environment for the project at first, like the core files Bucketlist.tsx, Home.tsx, and the starter files. Implemented the image uploader modal, made initial design for the pages and components. Essentially, set the foundation for the project on WebStorm. 
 
-- **Together**: A majority of what we worked on, all of us worked on it together in different pieces. With a majority of the things we implemented was done in chunks and we all tackled the problem together, we also all worked on little bugs as we could and took over with tasks when the others were busy. We all worked together to fix our deployment issue
+- **Together**: The majority of our work was completed synchronously in different pieces, with a large portionbeing done in large chunks. We all tackled the main problem and worked on little bugs together. We tended to tag-team problems to accomadate our busy schedules, where one person would start the task and another would take over after they finished. We all worked together to fix our deployment issue.
 
 ## Accessibility Features
 **Design Achievement 1: Comprehensive Web Accessibility Implementation**
