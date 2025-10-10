@@ -82,19 +82,19 @@ You will be navigated to the intial page when you first sign up or log in. This 
 - **Custom Components**: Reusable components (BucketCard, Avatar, Modal components) built with TypeScript interfaces
 
 ## Challenges
-- **Bugs**:
-- **Implementation of collaboration**:
-- **Scale**:
-- **Our personal collaboration as a team**: 
+- **Bugs**: We have a lot of various bugs that come up and we were unable to fix all of them within the scope of the project, they aren't huge bugs but the application is definitely still a little buggy. we would fix some and then more would be found so we focused on the main functionalities and makeing sure they work
+- **Implementation of collaboration**: this was one of the more difficult parts of the application, collaboration implementation was a challenge
+- **Scale**: the scale of our project may have been a little ambitious but we did start early so we think we did pretty well considering how busy we all were and how much time we spent on it
+- **Our personal collaboration as a team & deployment**: We realized there was a lot of miscommunication when we were just trying to do this while texting, but we were able to make the better progress when we met in person. deployment took us 3 hours because we had to change all of our dependencies to prod and we also were having issues with the implementation or lack of our session id and cookies. but we ended up figuring it out!!! 
 
 ## Contributions
-- **Amanda**: Came up with the idea for PhotoBucket and created the Figma mockup and Style Guide for the application before development. Implemented the fetching of storage for the images in the Bucket Gallery so they are store per user and not locally. Implemented the responsive and animated UI aspects (The animated sidebar, the button components), redeveloped the UI after initial implementation that Nia did, to match the aesthetic more to fit the Figma Mockup we had. Completed the README
+- **Amanda**: Came up with the idea for PhotoBucket and created the Figma mockup and Style Guide for the application before development. Implemented the fetching of storage for the images in the Bucket Gallery so they are store per user and not locally. Implemented the responsive and animated UI aspects (The animated sidebar, the button components), redeveloped the UI after initial implementation that Nia did, to match the aesthetic more to fit the Figma Mockup we had. Completed the README, edited the video and did final submission. 
 
 - **Grace**: Implemented the functionality of the collaboration aspect. Set up backend and database for storage of information. Initial log in 
 
 - **Nia**: Set up the environment for the project at first, like the core files Bucketlist.tsx, Home.tsx, and the starter files. Implemented the image uploader modal, made initial design for the pages and components. Essentially, set the foundation for the project on WebStorm. 
 
-- **Together**: A majority of what we worked on, all of us worked on it together in different pieces. With a majority of the things we implemented 
+- **Together**: A majority of what we worked on, all of us worked on it together in different pieces. With a majority of the things we implemented was done in chunks and we all tackled the problem together, we also all worked on little bugs as we could and took over with tasks when the others were busy. We all worked together to fix our deployment issue
 
 ## Accessibility Features
 **Design Achievement 1: Comprehensive Web Accessibility Implementation**
